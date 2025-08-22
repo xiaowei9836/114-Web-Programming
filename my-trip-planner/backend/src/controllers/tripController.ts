@@ -1,0 +1,143 @@
+import { Request, Response } from 'express';
+import Trip, { ITrip } from '../models/Trip';
+
+// 获取所有旅行
+export const getAllTrips = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const trips = await Trip.find().sort({ createdAt: -1 });
+    res.status(200).json(trips);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    res.status(500).json({ message: '获取旅行列表失败', error: errorMessage });
+  }
+};
+
+// 获取单个旅行
+export const getTripById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const trip = await Trip.findById(req.params.id);
+    if (!trip) {
+      res.status(404).json({ message: '旅行不存在' });
+      return;
+    }
+    res.status(200).json(trip);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    res.status(500).json({ message: '获取旅行详情失败', error: errorMessage });
+  }
+};
+
+// 创建新旅行
+export const createTrip = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const trip = new Trip(req.body);
+    const savedTrip = await trip.save();
+    res.status(201).json(savedTrip);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    res.status(400).json({ message: '创建旅行失败', error: errorMessage });
+  }
+};
+
+// 更新旅行
+export const updateTrip = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const trip = await Trip.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!trip) {
+      res.status(404).json({ message: '旅行不存在' });
+      return;
+    }
+    res.status(200).json(trip);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    res.status(400).json({ message: '更新旅行失败', error: errorMessage });
+  }
+};
+
+// 删除旅行
+export const deleteTrip = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const trip = await Trip.findByIdAndDelete(req.params.id);
+    if (!trip) {
+      res.status(404).json({ message: '旅行不存在' });
+      return;
+    }
+    res.status(200).json({ message: '旅行删除成功' });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    res.status(500).json({ message: '删除旅行失败', error: errorMessage });
+  }
+};
+
+// 添加行程活动
+export const addItineraryActivity = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { tripId, date, activity } = req.body;
+    const trip = await Trip.findById(tripId);
+    
+    if (!trip) {
+      res.status(404).json({ message: '旅行不存在' });
+      return;
+    }
+
+    const existingDate = trip.itinerary.find(item => 
+      item.date.toDateString() === new Date(date).toDateString()
+    );
+
+    if (existingDate) {
+      existingDate.activities.push(activity);
+    } else {
+      trip.itinerary.push({ date: new Date(date), activities: [activity] });
+    }
+
+    const updatedTrip = await trip.save();
+    res.status(200).json(updatedTrip);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    res.status(400).json({ message: '添加行程活动失败', error: errorMessage });
+  }
+};
+
+// 添加提醒
+export const addReminder = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { tripId, reminder } = req.body;
+    const trip = await Trip.findById(tripId);
+    
+    if (!trip) {
+      res.status(404).json({ message: '旅行不存在' });
+      return;
+    }
+
+    trip.reminders.push(reminder);
+    const updatedTrip = await trip.save();
+    res.status(200).json(updatedTrip);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    res.status(400).json({ message: '添加提醒失败', error: errorMessage });
+  }
+};
+
+// 添加日记条目
+export const addJournalEntry = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { tripId, journalEntry } = req.body;
+    const trip = await Trip.findById(tripId);
+    
+    if (!trip) {
+      res.status(404).json({ message: '旅行不存在' });
+      return;
+    }
+
+    trip.journal.push(journalEntry);
+    const updatedTrip = await trip.save();
+    res.status(200).json(updatedTrip);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    res.status(400).json({ message: '添加日记条目失败', error: errorMessage });
+  }
+};
