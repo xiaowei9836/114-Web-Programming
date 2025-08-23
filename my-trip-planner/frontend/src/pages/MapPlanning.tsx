@@ -302,33 +302,12 @@ const MapPlanning: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900">行程地點</h2>
                 {tripPoints.length > 0 && (
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => {
-                        if (tripPoints.length >= 2) {
-                          const newOrder = [...tripPoints];
-                          // 將第一個地點移到最后
-                          const first = newOrder.shift();
-                          if (first) {
-                            newOrder.push(first);
-                            setTripPoints(newOrder);
-                            console.log('MapPlanning: 將第一個地點移到最后');
-                          }
-                        }
-                      }}
-                      className="text-blue-600 hover:text-blue-700 text-sm font-medium px-2 py-1 border border-blue-300 rounded"
-                      disabled={tripPoints.length < 2}
-                      title="將第一個地點移到最后"
-                    >
-                      首尾調換
-                    </button>
-                    <button
-                      onClick={handleClearAll}
-                      className="text-red-600 hover:text-red-700 text-sm font-medium"
-                    >
-                      清除全部
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleClearAll}
+                    className="text-red-600 hover:text-red-700 text-sm font-medium"
+                  >
+                    清除全部
+                  </button>
                 )}
               </div>
               
@@ -369,7 +348,34 @@ const MapPlanning: React.FC = () => {
                               <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
                             )}
                           </div>
-                          <div className="flex items-center space-x-1 ml-2">
+                          <div className="flex items-center space-x-2 ml-2">
+                            {/* 直接修改順序輸入框 */}
+                            <div className="flex items-center space-x-1">
+                              <span className="text-xs text-gray-500">去</span>
+                              <input
+                                type="number"
+                                min="1"
+                                max={tripPoints.length}
+                                value={index + 1}
+                                onChange={(e) => {
+                                  const newPosition = parseInt(e.target.value);
+                                  if (newPosition >= 1 && newPosition <= tripPoints.length && newPosition !== index + 1) {
+                                    // 創建新的順序數組
+                                    const newOrder = [...tripPoints];
+                                    // 移除當前地點
+                                    const [movedItem] = newOrder.splice(index, 1);
+                                    // 插入到新位置（減1是因為數組索引從0開始）
+                                    newOrder.splice(newPosition - 1, 0, movedItem);
+                                    setTripPoints(newOrder);
+                                    console.log(`MapPlanning: 將 "${point.location.name}" 從第 ${index + 1} 位移動到第 ${newPosition} 位`);
+                                  }
+                                }}
+                                className="w-12 px-2 py-1 text-xs border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                title={`輸入 1-${tripPoints.length} 來調整順序`}
+                              />
+                              <span className="text-xs text-gray-500">位</span>
+                            </div>
+                            
                             {/* 上移按鈕 */}
                             <button
                               onClick={() => {
