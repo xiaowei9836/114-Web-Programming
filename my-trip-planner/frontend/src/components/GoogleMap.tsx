@@ -30,7 +30,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
 
   const [directionsService, setDirectionsService] = useState<google.maps.DirectionsService | null>(null);
   const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer | null>(null);
-  const [mapMarkers, setMapMarkers] = useState<google.maps.marker.AdvancedMarkerElement[]>([]);
+  const [mapMarkers, setMapMarkers] = useState<google.maps.Marker[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState<string>('');
@@ -58,7 +58,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         const loader = new Loader({
           apiKey: apiKey,
           version: 'weekly',
-          libraries: ['places', 'geometry', 'marker']
+          libraries: ['places', 'geometry']
         });
 
         const google = await loader.load();
@@ -74,6 +74,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
           streetViewControl: true,
           fullscreenControl: true,
           zoomControl: true,
+          mapId: 'YOUR_MAP_ID_HERE', // 添加這行，替換為您的 Map ID
           styles: [
             {
               featureType: 'poi',
@@ -150,54 +151,40 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   // 添加標記
   const addMarker = async (location: Location) => {
     if (!map) return;
-
     try {
-      // 導入 AdvancedMarkerElement
-      const { AdvancedMarkerElement } = await google.maps.importLibrary("marker") as google.maps.MarkerLibrary;
-
-      // 創建標記內容元素
-      const markerContent = document.createElement('div');
-      markerContent.className = 'marker-content';
-      markerContent.style.cssText = `
-        width: 24px;
-        height: 24px;
-        background-color: #3B82F6;
-        border: 2px solid white;
-        border-radius: 50%;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        cursor: pointer;
-      `;
-
-      const marker = new AdvancedMarkerElement({
+      const marker = new google.maps.Marker({
         map: map,
         position: { lat: location.lat, lng: location.lng },
-        content: markerContent,
         title: location.name
       });
-
-      // 信息窗口
+      
+      // 創建信息窗口
       const infoWindow = new google.maps.InfoWindow({
         content: `
-          <div class="p-2">
-            <h3 class="font-semibold text-gray-900">${location.name}</h3>
-            ${location.address ? `<p class="text-sm text-gray-600">${location.address}</p>` : ''}
-            <button 
-              onclick="window.selectLocation && window.selectLocation(${location.lat}, ${location.lng}, '${location.name}')"
-              class="mt-2 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
-            >
+          <div style="padding: 10px;">
+            <h3>${location.name}</h3>
+            ${location.address ? `<p>${location.address}</p>` : ''}
+            <button onclick="window.selectLocation('${location.name}', ${location.lat}, ${location.lng})" 
+                    style="background: #3B82F6; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">
               選擇此地點
             </button>
           </div>
         `
       });
 
+      // 全局函數供訊息視窗使用
+      (window as any).selectLocation = (name: string, lat: number, lng: number) => {
+        if (onLocationSelect) {
+          onLocationSelect({ lat, lng, name });
+        }
+        infoWindow.close();
+      };
+
       marker.addListener('click', () => {
         infoWindow.open(map, marker);
       });
 
-      // 儲存標記引用
       setMapMarkers(prev => [...prev, marker]);
-
       return marker;
     } catch (error) {
       console.error('創建標記失敗:', error);
@@ -208,9 +195,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   // 清除所有標記
   const clearMarkers = () => {
     mapMarkers.forEach(marker => {
-      if (marker.map) {
-        marker.map = null;
-      }
+      marker.setMap(null);
     });
     setMapMarkers([]);
   };
