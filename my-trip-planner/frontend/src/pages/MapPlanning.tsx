@@ -112,12 +112,9 @@ const MapPlanning: React.FC = () => {
           <div className="card">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">地圖視圖</h2>
             <GoogleMap
-              center={{ lat: 25.0330, lng: 121.5654, name: '台北' }}
-              markers={tripPoints.map(point => point.location)}
               onLocationSelect={handleLocationSelect}
-              height="600px"
-              showSearchBox={true}
-              showDirections={true}
+              showLocationSearch={true}
+              className="h-96 rounded-lg border border-gray-200"
             />
           </div>
         </div>
