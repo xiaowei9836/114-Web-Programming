@@ -7,20 +7,20 @@ const Home: React.FC = () => {
     {
       icon: <Globe className="h-12 w-12 text-blue-600" />,
       title: '地圖規劃',
-      description: '使用 Google Maps 規劃您的旅行路線，探索目的地景點和餐廳',
+      description: '規劃您的旅行路線，探索目的地景點和餐廳',
       color: 'bg-blue-50',
       link: '/map-planning'
     },
     {
       icon: <Calendar className="h-12 w-12 text-green-600" />,
       title: '行程安排',
-      description: '創建詳細的每日行程，包括活動、時間和地點',
+      description: '建立每日詳細行程，包含活動、時間和地點',
       color: 'bg-green-50'
     },
     {
       icon: <DollarSign className="h-12 w-12 text-yellow-600" />,
       title: '預算管理',
-      description: '跟蹤旅行支出，設置預算限制，管理財務',
+      description: '追蹤旅行支出，設定預算限制，與管理財務',
       color: 'bg-yellow-50'
     },
     {
