@@ -15,13 +15,15 @@ const Home: React.FC = () => {
       icon: <Calendar className="h-12 w-12 text-green-600" />,
       title: '行程安排',
       description: '建立每日詳細行程，包含活動、時間和地點',
-      color: 'bg-green-50'
+      color: 'bg-green-50',
+      link: '/trips'
     },
     {
       icon: <DollarSign className="h-12 w-12 text-yellow-600" />,
       title: '預算管理',
       description: '追蹤旅行支出，設定預算限制，與管理財務',
-      color: 'bg-yellow-50'
+      color: 'bg-yellow-50',
+      link: '/trips'
     },
     {
       icon: <Bell className="h-12 w-12 text-purple-600" />,
@@ -99,7 +101,13 @@ const Home: React.FC = () => {
                     {feature.description}
                   </p>
                   <div className="mt-4">
-                    <span className="text-blue-600 text-sm font-medium">點擊體驗 →</span>
+                    {feature.title === '地圖規劃' ? (
+                      <span className="text-blue-600 text-sm font-medium">點擊體驗 →</span>
+                    ) : feature.title === '行程安排' ? (
+                      <span className="text-green-600 text-sm font-medium">點擊安排 →</span>
+                    ) : (
+                      <span className="text-yellow-600 text-sm font-medium">點擊管理 →</span>
+                    )}
                   </div>
                 </Link>
               ) : (
