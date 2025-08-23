@@ -8,6 +8,9 @@ const generateStableId = () => {
   return `point-${idCounter}-${Date.now()}`;
 };
 
+// 行程點數量限制
+const MAX_TRIP_POINTS = 100;
+
 // 定義類型
 interface Location {
   lat: number;
@@ -25,6 +28,8 @@ interface TripPoint {
 }
 
 interface TripData {
+  id: string;
+  name: string;
   title: string;
   createdAt: string;
   totalPoints: number;
@@ -60,6 +65,7 @@ const MapPlanning: React.FC = () => {
   const [savedTripData, setSavedTripData] = useState<TripData | null>(null);
   const [savedTripSummary, setSavedTripSummary] = useState<string>('');
   const [showSavedTrip, setShowSavedTrip] = useState(false);
+  const [savedTrips, setSavedTrips] = useState<TripData[]>([]); // 新增狀態來保存所有行程
   const searchTimeoutRef = useRef<number>();
   const mapRef = useRef<GoogleMapRef>(null);
 
@@ -160,23 +166,30 @@ const MapPlanning: React.FC = () => {
     }
   };
 
+  // 添加地點到行程
   const handleAddPoint = () => {
     if (!selectedLocation) return;
+
+    // 檢查是否達到地點數量上限
+    if (tripPoints.length >= MAX_TRIP_POINTS) {
+      alert(`已達到行程地點數量上限（最多 ${MAX_TRIP_POINTS} 個地點）`);
+      return;
+    }
 
     const newTripPoint: TripPoint = {
       id: generateStableId(),
       location: selectedLocation,
-      estimatedCost: newPoint.estimatedCost ? parseFloat(newPoint.estimatedCost) : undefined,
-      estimatedTime: newPoint.estimatedTime ? parseFloat(newPoint.estimatedTime) : undefined,
+      estimatedCost: newPoint.estimatedCost ? parseInt(newPoint.estimatedCost) : undefined,
+      estimatedTime: newPoint.estimatedTime ? parseInt(newPoint.estimatedTime) : undefined,
       notes: newPoint.notes || undefined
     };
 
-    console.log('MapPlanning: 添加新地點，ID:', newTripPoint.id);
     setTripPoints(prev => [...prev, newTripPoint]);
     setSelectedLocation(null);
     setShowAddForm(false);
     setNewPoint({ estimatedCost: '', estimatedTime: '', notes: '' });
-    clearTempMarker(); // 添加地點後清除臨時標記
+    
+    console.log('MapPlanning: 添加新地點，ID:', newTripPoint.id);
   };
 
   const handleRemovePoint = (id: string) => {
@@ -192,6 +205,8 @@ const MapPlanning: React.FC = () => {
 
     // 收集行程數據
     const tripData: TripData = {
+      id: generateStableId(),
+      name: `我的行程 - ${new Date().toLocaleDateString('zh-TW')}`,
       title: `我的行程 - ${new Date().toLocaleDateString('zh-TW')}`,
       createdAt: new Date().toISOString(),
       totalPoints: tripPoints.length,
@@ -218,6 +233,16 @@ const MapPlanning: React.FC = () => {
     // 創建行程摘要
     const tripSummary = generateTripSummary(tripData);
     
+    // 保存到多個行程列表中
+    setSavedTrips(prev => {
+      const newTrips = [...prev, tripData];
+      // 限制保存的行程數量（最多保存10個）
+      if (newTrips.length > 10) {
+        newTrips.splice(0, newTrips.length - 10);
+      }
+      return newTrips;
+    });
+    
     // 在畫面上顯示行程數據
     setSavedTripData(tripData);
     setSavedTripSummary(tripSummary);
@@ -225,9 +250,13 @@ const MapPlanning: React.FC = () => {
     
     // 保存到 localStorage 以持久化
     try {
-      localStorage.setItem('savedTripData', JSON.stringify(tripData));
-      localStorage.setItem('savedTripSummary', tripSummary);
-      localStorage.setItem('showSavedTrip', 'true');
+      const existingTrips = JSON.parse(localStorage.getItem('savedTrips') || '[]');
+      const newTrips = [...existingTrips, tripData];
+      // 限制保存的行程數量（最多保存10個）
+      if (newTrips.length > 10) {
+        newTrips.splice(0, newTrips.length - 10);
+      }
+      localStorage.setItem('savedTrips', JSON.stringify(newTrips));
       console.log('MapPlanning: 行程已保存到 localStorage');
     } catch (error) {
       console.error('MapPlanning: 保存到 localStorage 失敗:', error);
@@ -278,17 +307,9 @@ const MapPlanning: React.FC = () => {
   // 在頁面載入時恢復保存的行程數據
   useEffect(() => {
     try {
-      const savedTripDataStr = localStorage.getItem('savedTripData');
-      const savedTripSummaryStr = localStorage.getItem('savedTripSummary');
-      const showSavedTripStr = localStorage.getItem('showSavedTrip');
-      
-      if (savedTripDataStr && savedTripSummaryStr) {
-        const tripData = JSON.parse(savedTripDataStr);
-        setSavedTripData(tripData);
-        setSavedTripSummary(savedTripSummaryStr);
-        setShowSavedTrip(showSavedTripStr === 'true');
-        console.log('MapPlanning: 已恢復保存的行程數據');
-      }
+      const savedTripsData = JSON.parse(localStorage.getItem('savedTrips') || '[]');
+      setSavedTrips(savedTripsData);
+      console.log('MapPlanning: 已恢復保存的行程數據');
     } catch (error) {
       console.error('MapPlanning: 恢復保存的行程數據失敗:', error);
     }
@@ -612,6 +633,11 @@ const MapPlanning: React.FC = () => {
                     {tripPoints.length > 0 ? (
                       <>
                         已規劃 {tripPoints.length} 個地點
+                        {tripPoints.length >= MAX_TRIP_POINTS && (
+                          <span className="ml-2 text-orange-600 font-medium">
+                            (已達上限 {MAX_TRIP_POINTS} 個)
+                          </span>
+                        )}
                         {tripPoints.some(p => p.estimatedCost) && (
                           <span className="ml-2">
                             • 總預估費用：$
@@ -634,6 +660,16 @@ const MapPlanning: React.FC = () => {
                       '尚未添加任何地點，請先搜尋並添加地點到行程中'
                     )}
                   </p>
+                  {tripPoints.length > 0 && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      地點數量限制：{tripPoints.length}/{MAX_TRIP_POINTS}
+                    </p>
+                  )}
+                  {savedTrips.length > 0 && (
+                    <p className="text-sm text-blue-600 mt-2">
+                      已保存 {savedTrips.length} 個行程
+                    </p>
+                  )}
                 </div>
                 <div className="flex space-x-3">
                   <button
@@ -663,35 +699,64 @@ const MapPlanning: React.FC = () => {
             </div>
 
             {/* 保存的行程顯示區域 */}
-            {showSavedTrip && savedTripData && (
+            {savedTrips.length > 0 && (
               <div className="mt-6 bg-blue-50 rounded-lg border border-blue-200 p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-blue-900">已保存的行程</h3>
                   <button
                     onClick={() => {
+                      setSavedTrips([]);
                       setShowSavedTrip(false);
                       // 清除 localStorage 中的保存數據
                       try {
-                        localStorage.removeItem('savedTripData');
-                        localStorage.removeItem('savedTripSummary');
-                        localStorage.removeItem('showSavedTrip');
-                        console.log('MapPlanning: 已清除保存的行程數據');
+                        localStorage.removeItem('savedTrips');
+                        console.log('MapPlanning: 已清除所有保存的行程數據');
                       } catch (error) {
                         console.error('MapPlanning: 清除保存的行程數據失敗:', error);
                       }
                     }}
                     className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                   >
-                    關閉
+                    清除全部
                   </button>
                 </div>
-                <div className="bg-white rounded-lg p-4 border border-blue-200">
-                  <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
-                    {savedTripSummary}
-                  </pre>
-                </div>
-                <div className="mt-4 text-xs text-blue-600">
-                  行程已保存於：{new Date(savedTripData.createdAt).toLocaleString('zh-TW')}
+                <div className="space-y-4">
+                  {savedTrips.map((trip, index) => (
+                    <div key={trip.id} className="bg-white rounded-lg p-4 border border-blue-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-blue-900">{trip.name}</h4>
+                        <button
+                          onClick={() => {
+                            setSavedTrips(prev => prev.filter(t => t.id !== trip.id));
+                            // 從 localStorage 中移除特定行程
+                            try {
+                              const existingTrips = JSON.parse(localStorage.getItem('savedTrips') || '[]');
+                              const updatedTrips = existingTrips.filter((t: TripData) => t.id !== trip.id);
+                              localStorage.setItem('savedTrips', JSON.stringify(updatedTrips));
+                              console.log('MapPlanning: 已移除行程:', trip.id);
+                            } catch (error) {
+                              console.error('MapPlanning: 移除行程失敗:', error);
+                            }
+                          }}
+                          className="text-red-500 hover:text-red-700 text-sm"
+                        >
+                          刪除
+                        </button>
+                      </div>
+                      <div className="text-sm text-gray-600 mb-2">
+                        保存於：{new Date(trip.createdAt).toLocaleString('zh-TW')}
+                      </div>
+                      <div className="text-sm text-gray-700">
+                        <div>地點數量：{trip.totalPoints} 個</div>
+                        {trip.totalEstimatedCost > 0 && (
+                          <div>總預估費用：${trip.totalEstimatedCost} NTD</div>
+                        )}
+                        {trip.totalEstimatedTime > 0 && (
+                          <div>總預估時間：{trip.totalEstimatedTime} 分鐘</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
