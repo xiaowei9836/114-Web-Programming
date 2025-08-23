@@ -102,10 +102,10 @@ const MapPlanning: React.FC = () => {
         address: place.formatted_address
       };
       
+      console.log('選擇搜尋結果:', location);
+      
       // 立即在地圖上添加大頭針標記
-      if (mapRef.current) {
-        addMarkerToMap(location);
-      }
+      addMarkerToMap(location);
       
       setSelectedLocation(location);
       setShowAddForm(true);
@@ -122,11 +122,15 @@ const MapPlanning: React.FC = () => {
     address?: string;
   }) => {
     if (!mapRef.current) {
-      console.log('地圖實例尚未載入');
+      console.log('地圖實例尚未載入，延遲添加標記');
+      // 如果地圖還沒載入，延遲添加標記
+      setTimeout(() => addMarkerToMap(location), 1000);
       return;
     }
 
     try {
+      console.log('開始在地圖上添加標記:', location);
+      
       // 創建大頭針標記
       const marker = new window.google.maps.Marker({
         position: { lat: location.lat, lng: location.lng },
@@ -253,6 +257,23 @@ const MapPlanning: React.FC = () => {
                 <p className="text-sm text-gray-500">
                   搜尋地點或直接點擊地圖添加標記
                 </p>
+                
+                {/* 測試按鈕 */}
+                <button
+                  onClick={() => {
+                    const testLocation = {
+                      lat: 25.0330,
+                      lng: 121.5654,
+                      name: '測試標記 - 台北市中心',
+                      address: '台北市信義區'
+                    };
+                    console.log('測試添加標記:', testLocation);
+                    addMarkerToMap(testLocation);
+                  }}
+                  className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                >
+                  測試：添加台北市中心標記
+                </button>
               </div>
             </div>
 
@@ -393,6 +414,7 @@ const MapPlanning: React.FC = () => {
                 showLocationSearch={false}
                 className="h-96 rounded-lg border border-gray-200"
                 onMapLoad={(map) => {
+                  console.log('MapPlanning: 收到地圖實例:', map);
                   mapRef.current = map;
                 }}
               />

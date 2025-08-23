@@ -139,20 +139,20 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         }
       };
 
-      // 地圖點擊事件
-      newMap.addListener('click', (event: google.maps.MapMouseEvent) => {
-        if (event.latLng) {
-          const location: Location = {
-            lat: event.latLng.lat(),
-            lng: event.latLng.lng(),
-            name: '點擊的地點'
-          };
-          console.log('GoogleMap: 地圖點擊，位置:', location);
-          if (addMarkerRef.current) {
-            addMarkerRef.current(location);
-          }
-        }
-      });
+      // 移除地圖點擊事件，避免與搜尋標記功能衝突
+      // newMap.addListener('click', (event: google.maps.MapMouseEvent) => {
+      //   if (event.latLng) {
+      //     const location: Location = {
+      //       lat: event.latLng.lat(),
+      //       lng: event.latLng.lng(),
+      //       name: '點擊的地點'
+      //     };
+      //     console.log('GoogleMap: 地圖點擊，位置:', location);
+      //     if (addMarkerRef.current) {
+      //       addMarkerRef.current(location);
+      //     }
+      //   }
+      // });
 
       setIsMapReady(true);
       console.log('GoogleMap: 地圖初始化完成');
