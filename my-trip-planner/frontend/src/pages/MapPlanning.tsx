@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import GoogleMap, { type GoogleMapRef } from '../components/GoogleMap';
 
@@ -167,6 +167,10 @@ const MapPlanning: React.FC = () => {
       }
     };
   }, []);
+
+  const externalMarkers = useMemo(() => {
+    return tripPoints.map(point => point.location);
+  }, [tripPoints]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -381,10 +385,7 @@ const MapPlanning: React.FC = () => {
                 onLocationSelect={handleLocationSelect}
                 showLocationSearch={false}
                 className="h-96 rounded-lg border border-gray-200"
-                externalMarkers={tripPoints.map(point => {
-                  console.log('MapPlanning: 傳遞外部標記:', point.location);
-                  return point.location;
-                })}
+                externalMarkers={externalMarkers}
                 onMarkerClick={(location) => {
                   console.log('點擊地圖標記:', location);
                   // 可以添加點擊標記後的邏輯，比如顯示地點詳情
