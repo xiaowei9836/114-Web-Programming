@@ -9,20 +9,23 @@ interface Location {
 
 interface GoogleMapProps {
   onLocationSelect?: (location: Location) => void;
-  onMapLoad?: (map: google.maps.Map) => void;
   showLocationSearch?: boolean;
   initialCenter?: { lat: number; lng: number };
   initialZoom?: number;
   className?: string;
+  // 添加外部標記支持
+  externalMarkers?: Location[];
+  onMarkerClick?: (location: Location) => void;
 }
 
 const GoogleMap: React.FC<GoogleMapProps> = ({
   onLocationSelect,
-  onMapLoad,
   showLocationSearch = true,
   initialCenter = { lat: 25.0330, lng: 121.5654 }, // 台北市中心
   initialZoom = 12,
-  className = ''
+  className = '',
+  externalMarkers = [],
+  onMarkerClick
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -78,11 +81,6 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       console.log('GoogleMap: 地圖創建成功');
       mapInstanceRef.current = newMap;
 
-      // 調用 onMapLoad 回調，讓父組件獲取地圖實例
-      if (onMapLoad) {
-        onMapLoad(newMap);
-      }
-
       // 創建路線渲染器
       const newDirectionsRenderer = new google.maps.DirectionsRenderer({
         suppressMarkers: true,
@@ -103,7 +101,17 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
           map: mapInstanceRef.current,
           position: { lat: location.lat, lng: location.lng },
           title: location.name,
-          animation: google.maps.Animation.DROP
+          animation: google.maps.Animation.DROP,
+          // 使用自定義圖標，紅色大頭針
+          icon: {
+            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C8.13 2 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#FF4444"/>
+              </svg>
+            `),
+            scaledSize: new google.maps.Size(24, 24),
+            anchor: new google.maps.Point(12, 24)
+          }
         });
 
         // 添加信息窗口
@@ -119,6 +127,10 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
 
         marker.addListener('click', () => {
           infoWindow.open(mapInstanceRef.current, marker);
+          // 觸發標記點擊回調
+          if (onMarkerClick) {
+            onMarkerClick(location);
+          }
         });
 
         markersRef.current.push(marker);
@@ -139,20 +151,20 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         }
       };
 
-      // 移除地圖點擊事件，避免與搜尋標記功能衝突
-      // newMap.addListener('click', (event: google.maps.MapMouseEvent) => {
-      //   if (event.latLng) {
-      //     const location: Location = {
-      //       lat: event.latLng.lat(),
-      //       lng: event.latLng.lng(),
-      //       name: '點擊的地點'
-      //     };
-      //     console.log('GoogleMap: 地圖點擊，位置:', location);
-      //     if (addMarkerRef.current) {
-      //       addMarkerRef.current(location);
-      //     }
-      //   }
-      // });
+      // 地圖點擊事件
+      newMap.addListener('click', (event: google.maps.MapMouseEvent) => {
+        if (event.latLng) {
+          const location: Location = {
+            lat: event.latLng.lat(),
+            lng: event.latLng.lng(),
+            name: '點擊的地點'
+          };
+          console.log('GoogleMap: 地圖點擊，位置:', location);
+          if (addMarkerRef.current) {
+            addMarkerRef.current(location);
+          }
+        }
+      });
 
       setIsMapReady(true);
       console.log('GoogleMap: 地圖初始化完成');
@@ -176,6 +188,26 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       mapInstanceRef.current.setZoom(stableZoom);
     }
   }, [stableCenter, stableZoom, isMapReady]);
+
+  // 處理外部標記變化的 useEffect
+  useEffect(() => {
+    if (!mapInstanceRef.current || !isMapReady) return;
+
+    // 清除現有的外部標記
+    markersRef.current.forEach(marker => {
+      marker.setMap(null);
+    });
+    markersRef.current = [];
+
+    // 添加新的外部標記
+    externalMarkers.forEach((location, index) => {
+      if (addMarkerRef.current) {
+        addMarkerRef.current(location);
+      }
+    });
+
+    console.log('GoogleMap: 外部標記已更新，共', externalMarkers.length, '個標記');
+  }, [externalMarkers, isMapReady]);
 
   // 暴露給父組件的方法
   const addMarker = useCallback((location: Location) => {
