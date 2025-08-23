@@ -131,7 +131,7 @@ const Home: React.FC = () => {
               <span className="text-2xl font-bold text-blue-700">1</span>
             </div>
             <h3 className="font-semibold text-gray-900 mb-2">地圖規劃</h3>
-            <p className="text-gray-600 text-sm">使用 Google Maps 搜尋和標記地點</p>
+            <p className="text-gray-600 text-sm">使用搜尋引擎和標記地點</p>
           </div>
           <div className="text-center">
             <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
