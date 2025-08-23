@@ -57,6 +57,9 @@ const MapPlanning: React.FC = () => {
     notes: ''
   });
   const [showOrderEdit, setShowOrderEdit] = useState(false);
+  const [savedTripData, setSavedTripData] = useState<TripData | null>(null);
+  const [savedTripSummary, setSavedTripSummary] = useState<string>('');
+  const [showSavedTrip, setShowSavedTrip] = useState(false);
   const searchTimeoutRef = useRef<number>();
   const mapRef = useRef<GoogleMapRef>(null);
 
@@ -180,7 +183,7 @@ const MapPlanning: React.FC = () => {
     setTripPoints(prev => prev.filter(point => point.id !== id));
   };
 
-  // 保存行程功能
+  // 保存行程功能 - 在畫面上顯示行程數據
   const handleSaveTrip = () => {
     if (tripPoints.length === 0) {
       alert('請先添加至少一個地點才能保存行程');
@@ -215,14 +218,13 @@ const MapPlanning: React.FC = () => {
     // 創建行程摘要
     const tripSummary = generateTripSummary(tripData);
     
-    // 保存到本地存儲
-    saveTripToLocal(tripData);
-    
-    // 導出行程文件
-    exportTripFile(tripData, tripSummary);
+    // 在畫面上顯示行程數據
+    setSavedTripData(tripData);
+    setSavedTripSummary(tripSummary);
+    setShowSavedTrip(true);
     
     // 顯示成功消息
-    alert('行程保存成功！已保存到本地並導出文件。');
+    alert('行程已保存並顯示在畫面上！');
   };
 
   // 生成行程摘要
@@ -256,64 +258,6 @@ const MapPlanning: React.FC = () => {
     return summary;
   };
 
-  // 保存到本地存儲
-  const saveTripToLocal = (tripData: TripData) => {
-    try {
-      // 獲取現有行程
-      const existingTrips = JSON.parse(localStorage.getItem('savedTrips') || '[]');
-      
-      // 添加新行程
-      const newTrip = {
-        ...tripData,
-        id: `trip-${Date.now()}`,
-        savedAt: new Date().toISOString()
-      };
-      
-      existingTrips.push(newTrip);
-      
-      // 限制保存的行程數量（最多保存10個）
-      if (existingTrips.length > 10) {
-        existingTrips.splice(0, existingTrips.length - 10);
-      }
-      
-      // 保存到本地存儲
-      localStorage.setItem('savedTrips', JSON.stringify(existingTrips));
-      
-      console.log('MapPlanning: 行程已保存到本地存儲');
-    } catch (error) {
-      console.error('MapPlanning: 保存到本地存儲失敗:', error);
-    }
-  };
-
-  // 導出行程文件
-  const exportTripFile = (tripData: TripData, tripSummary: string) => {
-    try {
-      // 創建文件名
-      const fileName = `行程規劃_${new Date().toISOString().slice(0, 10)}_${Date.now()}.txt`;
-      
-      // 創建 Blob
-      const blob = new Blob([tripSummary], { type: 'text/plain;charset=utf-8' });
-      
-      // 創建下載連結
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = fileName;
-      
-      // 觸發下載
-      document.body.appendChild(link);
-      link.click();
-      
-      // 清理
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      console.log('MapPlanning: 行程文件已導出');
-    } catch (error) {
-      console.error('MapPlanning: 導出文件失敗:', error);
-    }
-  };
-
   // 清理超時
   useEffect(() => {
     return () => {
@@ -330,7 +274,7 @@ const MapPlanning: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-4">
+        <div className="mb-2">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">地圖行程規劃</h1>
           <p className="text-gray-600">在地圖上規劃您的旅行地點，創建完美的行程安排</p>
         </div>
@@ -664,6 +608,29 @@ const MapPlanning: React.FC = () => {
                       清除全部
                     </button>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* 保存的行程顯示區域 */}
+            {showSavedTrip && savedTripData && (
+              <div className="mt-6 bg-blue-50 rounded-lg border border-blue-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-blue-900">已保存的行程</h3>
+                  <button
+                    onClick={() => setShowSavedTrip(false)}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    關閉
+                  </button>
+                </div>
+                <div className="bg-white rounded-lg p-4 border border-blue-200">
+                  <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
+                    {savedTripSummary}
+                  </pre>
+                </div>
+                <div className="mt-4 text-xs text-blue-600">
+                  行程已保存於：{new Date(savedTripData.createdAt).toLocaleString('zh-TW')}
                 </div>
               </div>
             )}
