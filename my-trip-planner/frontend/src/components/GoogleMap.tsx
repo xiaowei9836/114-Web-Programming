@@ -210,8 +210,8 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   };
 
   return (
-    <div className={`relative ${className}`}>
-      {/* 搜尋欄位 - 放在地圖上方 */}
+    <div className={`${className}`}>
+      {/* 搜尋欄位 - 移到地圖外面 */}
       {showLocationSearch && (
         <div className="mb-4 bg-white rounded-lg shadow-lg p-4 min-w-[320px]">
           <form onSubmit={handleSearchSubmit} className="space-y-3">
@@ -259,31 +259,33 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       )}
 
       {/* 地圖容器 */}
-      <div ref={mapRef} className="w-full h-full min-h-[500px] rounded-lg border border-gray-200" />
-      
-      {/* 地圖控制按鈕 */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-        <button
-          onClick={() => map?.setZoom((map.getZoom() || 12) + 1)}
-          className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-          title="放大"
-        >
-          ➕
-        </button>
-        <button
-          onClick={() => map?.setZoom((map.getZoom() || 12) - 1)}
-          className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-          title="縮小"
-        >
-          ➖
-        </button>
-        <button
-          onClick={() => map?.setCenter(initialCenter)}
-          className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-          title="回到中心"
-        >
-          🏠
-        </button>
+      <div className="relative">
+        <div ref={mapRef} className="w-full h-full min-h-[500px] rounded-lg border border-gray-200" />
+        
+        {/* 地圖控制按鈕 */}
+        <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+          <button
+            onClick={() => map?.setZoom((map.getZoom() || 12) + 1)}
+            className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+            title="放大"
+          >
+            ➕
+          </button>
+          <button
+            onClick={() => map?.setZoom((map.getZoom() || 12) - 1)}
+            className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+            title="縮小"
+          >
+            ➖
+          </button>
+          <button
+            onClick={() => map?.setCenter(initialCenter)}
+            className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+            title="回到中心"
+          >
+            🏠
+          </button>
+        </div>
       </div>
     </div>
   );
