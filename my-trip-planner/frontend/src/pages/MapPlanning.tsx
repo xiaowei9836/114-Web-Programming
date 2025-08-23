@@ -90,6 +90,27 @@ const MapPlanning: React.FC = () => {
     }
   };
 
+  // 測試拖曳項目的穩定性
+  const testDragStability = () => {
+    console.log('MapPlanning: 測試拖曳項目穩定性');
+    console.log('MapPlanning: 檢查 tripPoints 數組的穩定性');
+    
+    // 檢查數組引用是否穩定
+    const currentPoints = tripPoints;
+    console.log('MapPlanning: 當前 tripPoints 引用:', currentPoints);
+    console.log('MapPlanning: 數組長度:', currentPoints.length);
+    
+    // 檢查每個項目的穩定性
+    currentPoints.forEach((point, index) => {
+      console.log(`MapPlanning: 項目 ${index}:`, {
+        id: point.id,
+        name: point.location.name,
+        idType: typeof point.id,
+        idLength: point.id.length
+      });
+    });
+  };
+
   // 測試拖曳功能是否正常工作
   const testDrag = () => {
     console.log('MapPlanning: 測試拖曳功能');
@@ -99,6 +120,13 @@ const MapPlanning: React.FC = () => {
     
     // 檢查 react-beautiful-dnd 是否正常工作
     console.log('MapPlanning: 檢查 react-beautiful-dnd 狀態');
+    
+    // 檢查拖曳容器狀態
+    console.log('MapPlanning: 拖曳容器狀態檢查');
+    console.log('MapPlanning: 每個地點的拖曳狀態:');
+    tripPoints.forEach((point, index) => {
+      console.log(`  ${index + 1}. ID: ${point.id}, 名稱: ${point.location.name}`);
+    });
   };
 
   // 搜尋地點
@@ -336,14 +364,21 @@ const MapPlanning: React.FC = () => {
                     className="text-blue-600 hover:text-blue-700 text-sm font-medium px-2 py-1 border border-blue-300 rounded"
                     title="測試拖曳功能"
                   >
-                    測試拖曳
+                    🔍
                   </button>
                   <button
                     onClick={testSimpleDrag}
                     className="text-green-600 hover:text-green-700 text-sm font-medium px-2 py-1 border border-green-300 rounded"
                     title="測試簡單拖曳"
                   >
-                    簡單拖曳
+                    🔄
+                  </button>
+                  <button
+                    onClick={testDragStability}
+                    className="text-purple-600 hover:text-purple-700 text-sm font-medium px-2 py-1 border border-purple-300 rounded"
+                    title="測試拖曳穩定性"
+                  >
+                    📊
                   </button>
                   {tripPoints.length > 0 && (
                     <button
@@ -368,7 +403,7 @@ const MapPlanning: React.FC = () => {
                   onDragStart={(result) => console.log('MapPlanning: 拖曳開始:', result)}
                   onDragUpdate={(result) => console.log('MapPlanning: 拖曳更新:', result)}
                 >
-                  <Droppable droppableId="trip-points">
+                  <Droppable droppableId="trip-points" mode="standard">
                     {(provided, snapshot) => (
                       <div
                         {...provided.droppableProps}
@@ -380,7 +415,12 @@ const MapPlanning: React.FC = () => {
                         }}
                       >
                         {tripPoints.map((point, index) => (
-                          <Draggable key={point.id} draggableId={point.id} index={index}>
+                          <Draggable 
+                            key={point.id} 
+                            draggableId={point.id} 
+                            index={index}
+                            isDragDisabled={false}
+                          >
                             {(provided, snapshot) => (
                               <div
                                 ref={provided.innerRef}
