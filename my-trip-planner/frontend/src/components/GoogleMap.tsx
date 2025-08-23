@@ -48,6 +48,58 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   const addMarkerRef = useRef<(location: Location) => void>();
   const clearMarkersRef = useRef<() => void>();
   const clearRouteRef = useRef<() => void>();
+  const externalMarkersRef = useRef<google.maps.Marker[]>([]);
+
+  // 添加外部標記的函數
+  const addExternalMarker = useCallback((location: Location) => {
+    if (!mapInstanceRef.current) return;
+
+    const marker = new google.maps.Marker({
+      map: mapInstanceRef.current,
+      position: { lat: location.lat, lng: location.lng },
+      title: location.name,
+      animation: google.maps.Animation.DROP,
+      // 使用自定義圖標，紅色大頭針
+      icon: {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C8.13 2 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#FF4444"/>
+          </svg>
+        `),
+        scaledSize: new google.maps.Size(24, 24),
+        anchor: new google.maps.Point(12, 24)
+      }
+    });
+
+    // 添加信息窗口
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div style="padding: 10px;">
+          <h3 style="margin: 0 0 5px 0; font-size: 16px;">${location.name}</h3>
+          ${location.address ? `<p style="margin: 0; color: #666; font-size: 14px;">${location.address}</p>` : ''}
+          <p style="margin: 5px 0 0 0; color: #999; font-size: 12px;">${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}</p>
+        </div>
+      `
+    });
+
+    marker.addListener('click', () => {
+      infoWindow.open(mapInstanceRef.current, marker);
+      // 觸發標記點擊回調
+      if (onMarkerClick) {
+        onMarkerClick(location);
+      }
+    });
+
+    externalMarkersRef.current.push(marker);
+  }, [onMarkerClick]);
+
+  // 清除外部標記的函數
+  const clearExternalMarkers = useCallback(() => {
+    externalMarkersRef.current.forEach(marker => {
+      marker.setMap(null);
+    });
+    externalMarkersRef.current = [];
+  }, []);
 
   // 主要的地圖初始化 useEffect - 只在組件掛載時執行一次
   useEffect(() => {
@@ -101,17 +153,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
           map: mapInstanceRef.current,
           position: { lat: location.lat, lng: location.lng },
           title: location.name,
-          animation: google.maps.Animation.DROP,
-          // 使用自定義圖標，紅色大頭針
-          icon: {
-            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C8.13 2 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#FF4444"/>
-              </svg>
-            `),
-            scaledSize: new google.maps.Size(24, 24),
-            anchor: new google.maps.Point(12, 24)
-          }
+          animation: google.maps.Animation.DROP
         });
 
         // 添加信息窗口
@@ -127,10 +169,6 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
 
         marker.addListener('click', () => {
           infoWindow.open(mapInstanceRef.current, marker);
-          // 觸發標記點擊回調
-          if (onMarkerClick) {
-            onMarkerClick(location);
-          }
         });
 
         markersRef.current.push(marker);
@@ -194,20 +232,15 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     if (!mapInstanceRef.current || !isMapReady) return;
 
     // 清除現有的外部標記
-    markersRef.current.forEach(marker => {
-      marker.setMap(null);
-    });
-    markersRef.current = [];
+    clearExternalMarkers();
 
     // 添加新的外部標記
     externalMarkers.forEach((location, index) => {
-      if (addMarkerRef.current) {
-        addMarkerRef.current(location);
-      }
+      addExternalMarker(location);
     });
 
     console.log('GoogleMap: 外部標記已更新，共', externalMarkers.length, '個標記');
-  }, [externalMarkers, isMapReady]);
+  }, [externalMarkers, isMapReady, addExternalMarker, clearExternalMarkers]);
 
   // 暴露給父組件的方法
   const addMarker = useCallback((location: Location) => {
