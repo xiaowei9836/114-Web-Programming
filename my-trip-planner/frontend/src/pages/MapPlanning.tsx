@@ -361,7 +361,7 @@ const MapPlanning: React.FC = () => {
                           </div>
                           <div className="flex items-center space-x-2 ml-2">
                             {/* 直接修改順序輸入框 - 根據showOrderEdit狀態顯示/隱藏 */}
-                            {showOrderEdit ? (
+                            {showOrderEdit && (
                               <div className="flex items-center space-x-1">
                                 <span className="text-xs text-gray-500">去第</span>
                                 <input
@@ -387,8 +387,6 @@ const MapPlanning: React.FC = () => {
                                 />
                                 <span className="text-xs text-gray-500">位</span>
                               </div>
-                            ) : (
-                              <span className="text-xs text-gray-400 italic">點擊"修改順序"開啟編輯</span>
                             )}
                             
                             {/* 上移按鈕 */}
