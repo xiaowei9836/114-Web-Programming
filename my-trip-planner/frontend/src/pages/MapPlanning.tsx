@@ -364,88 +364,86 @@ const MapPlanning: React.FC = () => {
                                <h3 className="font-medium text-gray-900">{point.location.name}</h3>
                                <span className="ml-2 text-red-500" title="地圖標記">📍</span>
                              </div>
-                           </div>
-                           
-                           {/* 右側按鈕區域 */}
-                           <div className="flex flex-col items-center space-y-1 ml-2">
-                             {/* 移除按鈕 - 放在最上面 */}
-                             <button
-                               onClick={(e) => {
-                                 e.stopPropagation();
-                                 handleRemovePoint(point.id);
-                               }}
-                               onMouseDown={(e) => e.stopPropagation()}
-                               className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded w-8 h-8 flex items-center justify-center"
-                               title="移除地點"
-                             >
-                               ✕
-                             </button>
                              
-                             {/* 上移按鈕 */}
-                             <button
-                               onClick={() => {
-                                 if (index > 0) {
-                                   const newOrder = [...tripPoints];
-                                   const temp = newOrder[index];
-                                   newOrder[index] = newOrder[index - 1];
-                                   newOrder[index - 1] = temp;
-                                   setTripPoints(newOrder);
-                                   console.log(`MapPlanning: 將 "${point.location.name}" 上移一位`);
-                                 }
-                               }}
-                               disabled={index === 0}
-                               className={`p-1 rounded w-8 h-8 flex items-center justify-center ${
-                                 index === 0 
-                                   ? 'text-gray-300 cursor-not-allowed' 
-                                   : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
-                               }`}
-                               title={index === 0 ? '已是第一個' : '上移一位'}
-                             >
-                               ⬆️
-                             </button>
-                             
-                             {/* 下移按鈕 */}
-                             <button
-                               onClick={() => {
-                                 if (index < tripPoints.length - 1) {
-                                   const newOrder = [...tripPoints];
-                                   const temp = newOrder[index];
-                                   newOrder[index] = newOrder[index + 1];
-                                   newOrder[index + 1] = temp;
-                                   setTripPoints(newOrder);
-                                   console.log(`MapPlanning: 將 "${point.location.name}" 下移一位`);
-                                 }
-                               }}
-                               disabled={index === tripPoints.length - 1}
-                               className={`p-1 rounded w-8 h-8 flex items-center justify-center ${
-                                 index === tripPoints.length - 1 
-                                   ? 'text-gray-300 cursor-not-allowed' 
-                                   : 'text-green-600 hover:text-green-700 hover:bg-green-50'
-                               }`}
-                               title={index === tripPoints.length - 1 ? '已是最後一個' : '下移一位'}
-                             >
-                               ⬇️
-                             </button>
+                             {/* 詳細訊息區域 - 與"⬆️"按鈕上緣對齊 */}
+                             <div className="mt-6">
+                               {point.location.address && (
+                                 <p className="text-sm text-gray-600 mb-2">{point.location.address}</p>
+                               )}
+                               <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                 {point.estimatedCost && (
+                                   <span>💰 ${point.estimatedCost} NTD</span>
+                                 )}
+                                 {point.estimatedTime && (
+                                   <span>⏰ {point.estimatedTime} 分鐘</span>
+                                 )}
+                               </div>
+                               {point.notes && (
+                                 <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
+                               )}
+                             </div>
                            </div>
-                         </div>
-                         
-                         {/* 詳細訊息區域 - 與右側按鈕上緣對齊 */}
-                         <div className="ml-14">
-                           {point.location.address && (
-                             <p className="text-sm text-gray-600 mb-2">{point.location.address}</p>
-                           )}
-                           <div className="flex items-center space-x-4 text-sm text-gray-500">
-                             {point.estimatedCost && (
-                               <span>💰 ${point.estimatedCost} NTD</span>
-                             )}
-                             {point.estimatedTime && (
-                               <span>⏰ {point.estimatedTime} 分鐘</span>
-                             )}
-                           </div>
-                           {point.notes && (
-                             <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
-                           )}
-                         </div>
+                          <div className="flex flex-col items-center space-y-1 ml-2">
+                            {/* 移除按鈕 - 放在最上面 */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemovePoint(point.id);
+                              }}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded w-8 h-8 flex items-center justify-center"
+                              title="移除地點"
+                            >
+                              ✕
+                            </button>
+                            
+                            {/* 上移按鈕 */}
+                            <button
+                              onClick={() => {
+                                if (index > 0) {
+                                  const newOrder = [...tripPoints];
+                                  const temp = newOrder[index];
+                                  newOrder[index] = newOrder[index - 1];
+                                  newOrder[index - 1] = temp;
+                                  setTripPoints(newOrder);
+                                  console.log(`MapPlanning: 將 "${point.location.name}" 上移一位`);
+                                }
+                              }}
+                              disabled={index === 0}
+                              className={`p-1 rounded w-8 h-8 flex items-center justify-center ${
+                                index === 0 
+                                  ? 'text-gray-300 cursor-not-allowed' 
+                                  : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                              }`}
+                              title={index === 0 ? '已是第一個' : '上移一位'}
+                            >
+                              ⬆️
+                            </button>
+                            
+                            {/* 下移按鈕 */}
+                            <button
+                              onClick={() => {
+                                if (index < tripPoints.length - 1) {
+                                  const newOrder = [...tripPoints];
+                                  const temp = newOrder[index];
+                                  newOrder[index] = newOrder[index + 1];
+                                  newOrder[index + 1] = temp;
+                                  setTripPoints(newOrder);
+                                  console.log(`MapPlanning: 將 "${point.location.name}" 下移一位`);
+                                }
+                              }}
+                              disabled={index === tripPoints.length - 1}
+                              className={`p-1 rounded w-8 h-8 flex items-center justify-center ${
+                                index === tripPoints.length - 1 
+                                  ? 'text-gray-300 cursor-not-allowed' 
+                                  : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                              }`}
+                              title={index === tripPoints.length - 1 ? '已是最後一個' : '下移一位'}
+                            >
+                              ⬇️
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
