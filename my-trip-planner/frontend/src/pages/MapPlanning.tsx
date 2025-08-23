@@ -76,7 +76,7 @@ const MapPlanning: React.FC = () => {
               <GoogleMap
                 onLocationSelect={handleLocationSelect}
                 showLocationSearch={true}
-                className="h-96 rounded-lg border border-gray-200"
+                className="min-h-[600px]"
               />
             </div>
           </div>

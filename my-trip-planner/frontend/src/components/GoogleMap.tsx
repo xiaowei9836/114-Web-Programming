@@ -210,10 +210,10 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   };
 
   return (
-    <div className={`${className}`}>
-      {/* 搜尋欄位 - 移到地圖外面 */}
+    <div className={`space-y-4 ${className}`}>
+      {/* 搜尋欄位 - 完全分離在地圖外面 */}
       {showLocationSearch && (
-        <div className="mb-4 bg-white rounded-lg shadow-lg p-4 min-w-[320px]">
+        <div className="bg-white rounded-lg shadow-lg p-4 min-w-[320px] border border-gray-200">
           <form onSubmit={handleSearchSubmit} className="space-y-3">
             <div>
               <label htmlFor="location-search" className="block text-sm font-medium text-gray-700 mb-1">
@@ -258,9 +258,9 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         </div>
       )}
 
-      {/* 地圖容器 */}
-      <div className="relative">
-        <div ref={mapRef} className="w-full h-full min-h-[500px] rounded-lg border border-gray-200" />
+      {/* 地圖容器 - 獨立的高度設置 */}
+      <div className="relative bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+        <div ref={mapRef} className="w-full h-[500px]" />
         
         {/* 地圖控制按鈕 */}
         <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
