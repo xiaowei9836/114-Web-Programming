@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 interface Location {
   lat: number;
@@ -27,6 +27,81 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   const [mapMarkers, setMapMarkers] = useState<google.maps.Marker[]>([]);
   const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer | null>(null);
 
+  // 使用 useMemo 穩定 initialCenter 和 initialZoom
+  const stableCenter = useMemo(() => initialCenter, [initialCenter.lat, initialCenter.lng]);
+  const stableZoom = useMemo(() => initialZoom, [initialZoom]);
+
+  // 使用 useCallback 穩定 onLocationSelect 函數
+  const stableOnLocationSelect = useCallback((location: Location) => {
+    if (onLocationSelect) {
+      onLocationSelect(location);
+    }
+  }, [onLocationSelect]);
+
+  // 使用 useCallback 穩定 addMarker 函數
+  const addMarker = useCallback((location: Location) => {
+    if (!map) return;
+
+    const marker = new google.maps.Marker({
+      map: map,
+      position: { lat: location.lat, lng: location.lng },
+      title: location.name,
+      animation: google.maps.Animation.DROP
+    });
+
+    // 添加信息窗口
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div style="padding: 10px;">
+          <h3 style="margin: 0 0 5px 0; font-size: 16px;">${location.name}</h3>
+          ${location.address ? `<p style="margin: 0; color: #666; font-size: 14px;">${location.address}</p>` : ''}
+          <p style="margin: 5px 0 0 0; color: #999; font-size: 12px;">${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}</p>
+        </div>
+      `
+    });
+
+    marker.addListener('click', () => {
+      infoWindow.open(map, marker);
+    });
+
+    setMapMarkers(prev => [...prev, marker]);
+  }, [map]);
+
+  // 使用 useCallback 穩定 clearMarkers 函數
+  const clearMarkers = useCallback(() => {
+    mapMarkers.forEach(marker => {
+      marker.setMap(null);
+    });
+    setMapMarkers([]);
+  }, [mapMarkers]);
+
+  // 使用 useCallback 穩定 clearRoute 函數
+  const clearRoute = useCallback(() => {
+    if (directionsRenderer) {
+      directionsRenderer.setDirections({ routes: [] } as unknown as google.maps.DirectionsResult);
+    }
+  }, [directionsRenderer]);
+
+  // 使用 useCallback 穩定 planRoute 函數
+  const planRoute = useCallback(async (start: Location, end: Location) => {
+    if (!directionsRenderer || !map) return;
+
+    const directionsService = new google.maps.DirectionsService();
+    
+    try {
+      const result = await directionsService.route({
+        origin: { lat: start.lat, lng: start.lng },
+        destination: { lat: end.lat, lng: end.lng },
+        travelMode: google.maps.TravelMode.DRIVING
+      });
+
+      directionsRenderer.setDirections(result);
+    } catch (error) {
+      console.error('路線規劃失敗:', error);
+    }
+  }, [directionsRenderer, map]);
+
+  // 主要的地圖初始化 useEffect
   useEffect(() => {
     if (!mapRef.current || !window.google) {
       console.log('GoogleMap: 等待 Google Maps API 載入...');
@@ -39,8 +114,8 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
 
     try {
       const newMap = new google.maps.Map(mapRef.current, {
-        center: initialCenter,
-        zoom: initialZoom,
+        center: stableCenter,
+        zoom: stableZoom,
         mapTypeId: google.maps.MapTypeId.ROADMAP,
         mapTypeControl: true,
         streetViewControl: true,
@@ -95,66 +170,14 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       console.error('GoogleMap: 地圖初始化失敗:', error);
     }
 
-  }, [initialCenter, initialZoom, showLocationSearch, onLocationSelect]);
+  }, [stableCenter, stableZoom, showLocationSearch, addMarker]); // 移除 onLocationSelect 依賴
 
-  const addMarker = (location: Location) => {
-    if (!map) return;
-
-    const marker = new google.maps.Marker({
-      map: map,
-      position: { lat: location.lat, lng: location.lng },
-      title: location.name,
-      animation: google.maps.Animation.DROP
-    });
-
-    // 添加信息窗口
-    const infoWindow = new google.maps.InfoWindow({
-      content: `
-        <div style="padding: 10px;">
-          <h3 style="margin: 0 0 5px 0; font-size: 16px;">${location.name}</h3>
-          ${location.address ? `<p style="margin: 0; color: #666; font-size: 14px;">${location.address}</p>` : ''}
-          <p style="margin: 5px 0 0 0; color: #999; font-size: 12px;">${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}</p>
-        </div>
-      `
-    });
-
-    marker.addListener('click', () => {
-      infoWindow.open(map, marker);
-    });
-
-    setMapMarkers(prev => [...prev, marker]);
-  };
-
-  const clearMarkers = () => {
-    mapMarkers.forEach(marker => {
-      marker.setMap(null);
-    });
-    setMapMarkers([]);
-  };
-
-  const clearRoute = () => {
-    if (directionsRenderer) {
-      directionsRenderer.setDirections({ routes: [] } as unknown as google.maps.DirectionsResult);
+  // 單獨的 useEffect 處理 onLocationSelect 變化
+  useEffect(() => {
+    if (map) {
+      console.log('GoogleMap: onLocationSelect 回調已更新');
     }
-  };
-
-  const planRoute = async (start: Location, end: Location) => {
-    if (!directionsRenderer || !map) return;
-
-    const directionsService = new google.maps.DirectionsService();
-    
-    try {
-      const result = await directionsService.route({
-        origin: { lat: start.lat, lng: start.lng },
-        destination: { lat: end.lat, lng: end.lng },
-        travelMode: google.maps.TravelMode.DRIVING
-      });
-
-      directionsRenderer.setDirections(result);
-    } catch (error) {
-      console.error('路線規劃失敗:', error);
-    }
-  };
+  }, [map, stableOnLocationSelect]);
 
   return (
     <div className={`relative ${className}`}>

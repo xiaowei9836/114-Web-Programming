@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import GoogleMap from '../components/GoogleMap';
 
 interface TripPoint {
@@ -32,6 +32,18 @@ const MapPlanning: React.FC = () => {
   });
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef<number>();
+
+  // 使用 useCallback 穩定 handleLocationSelect 函數
+  const handleLocationSelect = useCallback((location: {
+    lat: number;
+    lng: number;
+    name: string;
+    address?: string;
+  }) => {
+    console.log('MapPlanning: 收到地點選擇:', location);
+    setSelectedLocation(location);
+    setShowAddForm(true);
+  }, []);
 
   // 搜尋地點
   const searchPlaces = async (query: string) => {
@@ -94,16 +106,6 @@ const MapPlanning: React.FC = () => {
       setSearchResults([]);
       setSearchQuery(place.name || '');
     }
-  };
-
-  const handleLocationSelect = (location: {
-    lat: number;
-    lng: number;
-    name: string;
-    address?: string;
-  }) => {
-    setSelectedLocation(location);
-    setShowAddForm(true);
   };
 
   const handleAddPoint = () => {
