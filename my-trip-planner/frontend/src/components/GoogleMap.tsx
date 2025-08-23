@@ -17,7 +17,7 @@ interface GoogleMapProps {
 
 const GoogleMap: React.FC<GoogleMapProps> = ({
   onLocationSelect,
-  showLocationSearch = false,
+  showLocationSearch = true,
   initialCenter = { lat: 25.0330, lng: 121.5654 }, // 台北市中心
   initialZoom = 12,
   className = ''
@@ -61,6 +61,13 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     newDirectionsRenderer.setMap(newMap);
     setDirectionsRenderer(newDirectionsRenderer);
 
+    // 添加地點搜尋功能
+    if (showLocationSearch) {
+      // 移除地圖上的搜尋框，因為搜尋功能現在在頁面左側
+      // 只保留地圖點擊功能
+      console.log('地圖搜尋功能已啟用，搜尋框在頁面左側');
+    }
+
     // 地圖點擊事件
     newMap.addListener('click', (event: google.maps.MapMouseEvent) => {
       if (event.latLng) {
@@ -73,7 +80,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       }
     });
 
-  }, [initialCenter, initialZoom]);
+  }, [initialCenter, initialZoom, showLocationSearch, onLocationSelect]);
 
   const addMarker = (location: Location) => {
     if (!map) return;
@@ -82,29 +89,16 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       map: map,
       position: { lat: location.lat, lng: location.lng },
       title: location.name,
-      animation: google.maps.Animation.DROP,
-      icon: {
-        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#3B82F6"/>
-          </svg>
-        `),
-        scaledSize: new google.maps.Size(24, 24),
-        anchor: new google.maps.Point(12, 24)
-      }
+      animation: google.maps.Animation.DROP
     });
 
     // 添加信息窗口
     const infoWindow = new google.maps.InfoWindow({
       content: `
-        <div style="padding: 10px; min-width: 200px;">
-          <h3 style="margin: 0 0 5px 0; font-size: 16px; color: #1F2937;">${location.name}</h3>
-          ${location.address ? `<p style="margin: 0; color: #6B7280; font-size: 14px;">${location.address}</p>` : ''}
-          <p style="margin: 5px 0 0 0; color: #9CA3AF; font-size: 12px;">${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}</p>
-          <button onclick="window.selectLocation('${location.name}', ${location.lat}, ${location.lng})" 
-                  style="background: #3B82F6; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-top: 8px; width: 100%;">
-            選擇此地點
-          </button>
+        <div style="padding: 10px;">
+          <h3 style="margin: 0 0 5px 0; font-size: 16px;">${location.name}</h3>
+          ${location.address ? `<p style="margin: 0; color: #666; font-size: 14px;">${location.address}</p>` : ''}
+          <p style="margin: 5px 0 0 0; color: #999; font-size: 12px;">${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}</p>
         </div>
       `
     });
@@ -114,17 +108,6 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     });
 
     setMapMarkers(prev => [...prev, marker]);
-
-    // 全局函數供信息窗口使用
-    (window as any).selectLocation = (name: string, lat: number, lng: number) => {
-      const location = { lat, lng, name };
-      if (onLocationSelect) {
-        onLocationSelect(location);
-      }
-      infoWindow.close();
-    };
-
-    return marker;
   };
 
   const clearMarkers = () => {
@@ -160,31 +143,23 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
 
   return (
     <div className={`relative ${className}`}>
-      {/* 地圖容器 - 純淨的地圖顯示 */}
-      <div ref={mapRef} className="w-full h-full min-h-[500px] rounded-lg border border-gray-200" />
+      <div ref={mapRef} className="w-full h-full min-h-[400px]" />
       
-      {/* 地圖控制按鈕 */}
+      {/* 控制按鈕 */}
       <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
         <button
-          onClick={() => map?.setZoom((map.getZoom() || 12) + 1)}
+          onClick={clearMarkers}
           className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-          title="放大"
+          title="清除標記"
         >
-          ➕
+          🗑️
         </button>
         <button
-          onClick={() => map?.setZoom((map.getZoom() || 12) - 1)}
+          onClick={clearRoute}
           className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-          title="縮小"
+          title="清除路線"
         >
-          ➖
-        </button>
-        <button
-          onClick={() => map?.setCenter(initialCenter)}
-          className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-          title="回到中心"
-        >
-          🏠
+          🚫
         </button>
       </div>
     </div>

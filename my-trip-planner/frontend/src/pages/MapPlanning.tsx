@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import GoogleMap from '../components/GoogleMap';
 
 interface TripPoint {
@@ -9,101 +9,324 @@ interface TripPoint {
     name: string;
     address?: string;
   };
-  estimatedCost: number;
-  estimatedTime: number;
-  notes: string;
+  estimatedCost?: number;
+  estimatedTime?: number;
+  notes?: string;
 }
 
 const MapPlanning: React.FC = () => {
   const [tripPoints, setTripPoints] = useState<TripPoint[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<google.maps.places.PlaceResult[]>([]);
+  const [selectedLocation, setSelectedLocation] = useState<{
+    lat: number;
+    lng: number;
+    name: string;
+    address?: string;
+  } | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
+  const [newPoint, setNewPoint] = useState({
     estimatedCost: '',
     estimatedTime: '',
     notes: ''
   });
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef<number>();
 
-  const handleLocationSelect = (location: { lat: number; lng: number; name: string; address?: string }) => {
-    setFormData(prev => ({ ...prev, name: location.name }));
+  // 搜尋地點
+  const searchPlaces = async (query: string) => {
+    if (!query.trim() || !window.google) return;
+
+    setIsSearching(true);
+    try {
+      const service = new google.maps.places.PlacesService(document.createElement('div'));
+      
+      const request: google.maps.places.TextSearchRequest = {
+        query: query,
+        type: 'establishment'
+      };
+
+      service.textSearch(request, (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+          setSearchResults(results.slice(0, 5)); // 限制結果數量
+        } else {
+          setSearchResults([]);
+        }
+        setIsSearching(false);
+      });
+    } catch (error) {
+      console.error('搜尋失敗:', error);
+      setIsSearching(false);
+    }
+  };
+
+  // 處理搜尋輸入
+  const handleSearchInput = (value: string) => {
+    setSearchQuery(value);
+    
+    // 清除之前的超時
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // 設置新的搜尋超時
+    searchTimeoutRef.current = setTimeout(() => {
+      if (value.trim()) {
+        searchPlaces(value);
+      } else {
+        setSearchResults([]);
+      }
+    }, 500);
+  };
+
+  // 選擇搜尋結果
+  const handleSelectSearchResult = (place: google.maps.places.PlaceResult) => {
+    if (place.geometry && place.geometry.location) {
+      const location = {
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+        name: place.name || '未知地點',
+        address: place.formatted_address
+      };
+      
+      setSelectedLocation(location);
+      setShowAddForm(true);
+      setSearchResults([]);
+      setSearchQuery(place.name || '');
+    }
+  };
+
+  const handleLocationSelect = (location: {
+    lat: number;
+    lng: number;
+    name: string;
+    address?: string;
+  }) => {
+    setSelectedLocation(location);
     setShowAddForm(true);
   };
 
   const handleAddPoint = () => {
-    if (!formData.name || !formData.estimatedCost || !formData.estimatedTime) {
-      alert('請填寫所有必填欄位');
-      return;
-    }
+    if (!selectedLocation) return;
 
-    const newPoint: TripPoint = {
+    const newTripPoint: TripPoint = {
       id: Date.now().toString(),
-      location: {
-        lat: 0, // 這裡需要從地圖選擇中獲取
-        lng: 0,
-        name: formData.name,
-        address: ''
-      },
-      estimatedCost: parseFloat(formData.estimatedCost),
-      estimatedTime: parseFloat(formData.estimatedTime),
-      notes: formData.notes
+      location: selectedLocation,
+      estimatedCost: newPoint.estimatedCost ? parseFloat(newPoint.estimatedCost) : undefined,
+      estimatedTime: newPoint.estimatedTime ? parseFloat(newPoint.estimatedTime) : undefined,
+      notes: newPoint.notes || undefined
     };
 
-    setTripPoints(prev => [...prev, newPoint]);
-    setFormData({ name: '', estimatedCost: '', estimatedTime: '', notes: '' });
+    setTripPoints(prev => [...prev, newTripPoint]);
+    setSelectedLocation(null);
     setShowAddForm(false);
+    setNewPoint({ estimatedCost: '', estimatedTime: '', notes: '' });
   };
 
   const handleRemovePoint = (id: string) => {
     setTripPoints(prev => prev.filter(point => point.id !== id));
   };
 
-  const totalCost = tripPoints.reduce((sum, point) => sum + (point.estimatedCost || 0), 0);
-  const totalTime = tripPoints.reduce((sum, point) => sum + (point.estimatedTime || 0), 0);
+  const handleClearAll = () => {
+    setTripPoints([]);
+    setSelectedLocation(null);
+    setShowAddForm(false);
+  };
+
+  // 清理超時
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">地圖規劃</h1>
-          <p className="text-gray-600">在地圖上規劃您的旅行地點和行程</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">地圖行程規劃</h1>
+          <p className="text-gray-600">在地圖上規劃您的旅行地點，創建完美的行程安排</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* 地圖視圖 */}
-          <div className="lg:col-span-2">
-            {/* 搜尋欄位 - 完全分離在地圖外面 */}
-            <div className="bg-white rounded-lg shadow-lg p-4 mb-4 border border-gray-200">
-              <form onSubmit={(e) => { e.preventDefault(); }} className="space-y-3">
-                <div>
-                  <label htmlFor="location-search" className="block text-sm font-medium text-gray-700 mb-1">
-                    搜尋地點
-                  </label>
+          {/* 左側控制面板 */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* 搜尋欄位 */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">搜尋地點</h2>
+              <div className="space-y-4">
+                <div className="relative">
                   <input
-                    id="location-search"
                     type="text"
                     placeholder="輸入地點名稱或地址..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                    value={searchQuery}
+                    onChange={(e) => handleSearchInput(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
+                  {isSearching && (
+                    <div className="absolute right-3 top-3">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    </div>
+                  )}
                 </div>
                 
-                <div className="flex space-x-2">
-                  <button
-                    type="button"
-                    className="flex-1 px-3 py-2 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700 transition-colors"
-                  >
-                    清除標記
-                  </button>
-                  <button
-                    type="button"
-                    className="flex-1 px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
-                  >
-                    清除路線
-                  </button>
-                </div>
-              </form>
+                {/* 搜尋結果 */}
+                {searchResults.length > 0 && (
+                  <div className="border border-gray-200 rounded-lg bg-white shadow-lg">
+                    {searchResults.map((place, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSelectSearchResult(place)}
+                        className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                      >
+                        <div className="font-medium text-gray-900">{place.name}</div>
+                        {place.formatted_address && (
+                          <div className="text-sm text-gray-600">{place.formatted_address}</div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                
+                <p className="text-sm text-gray-500">
+                  搜尋地點或直接點擊地圖添加標記
+                </p>
+              </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            {/* 已添加的地點列表 */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900">行程地點</h2>
+                {tripPoints.length > 0 && (
+                  <button
+                    onClick={handleClearAll}
+                    className="text-red-600 hover:text-red-700 text-sm font-medium"
+                  >
+                    清除全部
+                  </button>
+                )}
+              </div>
+              
+              {tripPoints.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="text-4xl mb-2">🗺️</div>
+                  <p>尚未添加任何地點</p>
+                  <p className="text-sm">搜尋地點或點擊地圖來開始規劃</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {tripPoints.map((point, index) => (
+                    <div key={point.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center mb-2">
+                            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full mr-2">
+                              {index + 1}
+                            </span>
+                            <h3 className="font-medium text-gray-900">{point.location.name}</h3>
+                          </div>
+                          {point.location.address && (
+                            <p className="text-sm text-gray-600 mb-2">{point.location.address}</p>
+                          )}
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            {point.estimatedCost && (
+                              <span>💰 ${point.estimatedCost}</span>
+                            )}
+                            {point.estimatedTime && (
+                              <span>⏰ {point.estimatedTime}小時</span>
+                            )}
+                          </div>
+                          {point.notes && (
+                            <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => handleRemovePoint(point.id)}
+                          className="text-red-500 hover:text-red-700 ml-2"
+                          title="移除地點"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 添加地點表單 */}
+            {showAddForm && selectedLocation && (
+              <div className="bg-white rounded-lg shadow-md p-6 border-2 border-blue-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  添加地點：{selectedLocation.name}
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      預估費用 (USD)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      value={newPoint.estimatedCost}
+                      onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedCost: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      預估時間 (小時)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="1.0"
+                      step="0.5"
+                      value={newPoint.estimatedTime}
+                      onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedTime: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      備註
+                    </label>
+                    <textarea
+                      placeholder="添加地點相關的備註..."
+                      value={newPoint.notes}
+                      onChange={(e) => setNewPoint(prev => ({ ...prev, notes: e.target.value }))}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={handleAddPoint}
+                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      添加地點
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAddForm(false);
+                        setSelectedLocation(null);
+                        setNewPoint({ estimatedCost: '', estimatedTime: '', notes: '' });
+                      }}
+                      className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 右側地圖區域 */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">地圖視圖</h2>
               <GoogleMap
                 onLocationSelect={handleLocationSelect}
@@ -112,154 +335,47 @@ const MapPlanning: React.FC = () => {
               />
             </div>
           </div>
+        </div>
 
-          {/* 側邊欄 - 地點列表和添加表單 */}
-          <div className="space-y-6">
-            {/* 添加地點表單 */}
-            {showAddForm && (
-              <div className="bg-white rounded-lg shadow-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">添加地點</h3>
-                <form onSubmit={(e) => { e.preventDefault(); handleAddPoint(); }} className="space-y-4">
-                  <div>
-                    <label htmlFor="location-name" className="block text-sm font-medium text-gray-700 mb-1">
-                      地點名稱 *
-                    </label>
-                    <input
-                      id="location-name"
-                      name="location-name"
-                      type="text"
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="estimated-cost" className="block text-sm font-medium text-gray-700 mb-1">
-                      預估費用 (NT$) *
-                    </label>
-                    <input
-                      id="estimated-cost"
-                      name="estimated-cost"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formData.estimatedCost}
-                      onChange={(e) => setFormData(prev => ({ ...prev, estimatedCost: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="estimated-time" className="block text-sm font-medium text-gray-700 mb-1">
-                      預估時間 (小時) *
-                    </label>
-                    <input
-                      id="estimated-time"
-                      name="estimated-time"
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      value={formData.estimatedTime}
-                      onChange={(e) => setFormData(prev => ({ ...prev, estimatedTime: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-                      備註
-                    </label>
-                    <textarea
-                      id="notes"
-                      name="notes"
-                      rows={3}
-                      value={formData.notes}
-                      onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="添加地點的相關備註..."
-                    />
-                  </div>
-
-                  <div className="flex space-x-3">
-                    <button
-                      type="submit"
-                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-                    >
-                      添加地點
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddForm(false)}
-                      className="flex-1 bg-gray-600 text-white py-2 px-4 rounded-md hover:bg-gray-700 transition-colors"
-                    >
-                      取消
-                    </button>
-                  </div>
-                </form>
+        {/* 底部操作按鈕 */}
+        {tripPoints.length > 0 && (
+          <div className="mt-8 bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">行程摘要</h3>
+                <p className="text-gray-600">
+                  已規劃 {tripPoints.length} 個地點
+                  {tripPoints.some(p => p.estimatedCost) && (
+                    <span className="ml-2">
+                      • 總預估費用：$
+                      {tripPoints
+                        .filter(p => p.estimatedCost)
+                        .reduce((sum, p) => sum + (p.estimatedCost || 0), 0)
+                        .toFixed(2)}
+                    </span>
+                  )}
+                </p>
               </div>
-            )}
-
-            {/* 地點列表 */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">已規劃地點</h3>
-              
-              {tripPoints.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">尚未添加任何地點</p>
-              ) : (
-                <div className="space-y-4">
-                  {tripPoints.map((point) => (
-                    <div key={point.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium text-gray-900">{point.location.name}</h4>
-                        <button
-                          onClick={() => handleRemovePoint(point.id)}
-                          className="text-red-600 hover:text-red-800 text-sm"
-                        >
-                          刪除
-                        </button>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mb-2">
-                        <div>
-                          <span className="font-medium">費用:</span> NT$ {point.estimatedCost}
-                        </div>
-                        <div>
-                          <span className="font-medium">時間:</span> {point.estimatedTime} 小時
-                        </div>
-                      </div>
-                      
-                      {point.notes && (
-                        <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                          {point.notes}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* 統計信息 */}
-              {tripPoints.length > 0 && (
-                <div className="mt-6 pt-4 border-t border-gray-200">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-blue-600">NT$ {totalCost}</div>
-                      <div className="text-gray-500">總費用</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-lg font-semibold text-green-600">{totalTime} 小時</div>
-                      <div className="text-gray-500">總時間</div>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    // 這裡可以添加保存行程的邏輯
+                    alert('行程保存功能開發中...');
+                  }}
+                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  保存行程
+                </button>
+                <button
+                  onClick={handleClearAll}
+                  className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  清除全部
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
