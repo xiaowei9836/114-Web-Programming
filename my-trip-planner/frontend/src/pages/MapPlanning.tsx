@@ -183,7 +183,7 @@ const MapPlanning: React.FC = () => {
     setTripPoints(prev => prev.filter(point => point.id !== id));
   };
 
-  // 保存行程功能 - 在畫面上顯示行程數據
+  // 保存行程功能 - 在畫面上顯示行程數據並持久化保存
   const handleSaveTrip = () => {
     if (tripPoints.length === 0) {
       alert('請先添加至少一個地點才能保存行程');
@@ -223,6 +223,16 @@ const MapPlanning: React.FC = () => {
     setSavedTripSummary(tripSummary);
     setShowSavedTrip(true);
     
+    // 保存到 localStorage 以持久化
+    try {
+      localStorage.setItem('savedTripData', JSON.stringify(tripData));
+      localStorage.setItem('savedTripSummary', tripSummary);
+      localStorage.setItem('showSavedTrip', 'true');
+      console.log('MapPlanning: 行程已保存到 localStorage');
+    } catch (error) {
+      console.error('MapPlanning: 保存到 localStorage 失敗:', error);
+    }
+    
     // 顯示成功消息
     alert('行程已保存並顯示在畫面上！');
   };
@@ -257,6 +267,32 @@ const MapPlanning: React.FC = () => {
     
     return summary;
   };
+
+  // 清理超時
+  const clearSearchTimeout = () => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+  };
+
+  // 在頁面載入時恢復保存的行程數據
+  useEffect(() => {
+    try {
+      const savedTripDataStr = localStorage.getItem('savedTripData');
+      const savedTripSummaryStr = localStorage.getItem('savedTripSummary');
+      const showSavedTripStr = localStorage.getItem('showSavedTrip');
+      
+      if (savedTripDataStr && savedTripSummaryStr) {
+        const tripData = JSON.parse(savedTripDataStr);
+        setSavedTripData(tripData);
+        setSavedTripSummary(savedTripSummaryStr);
+        setShowSavedTrip(showSavedTripStr === 'true');
+        console.log('MapPlanning: 已恢復保存的行程數據');
+      }
+    } catch (error) {
+      console.error('MapPlanning: 恢復保存的行程數據失敗:', error);
+    }
+  }, []);
 
   // 清理超時
   useEffect(() => {
@@ -568,49 +604,63 @@ const MapPlanning: React.FC = () => {
             </div>
 
             {/* 行程摘要區塊 - 移動到地圖視圖下方 */}
-            {tripPoints.length > 0 && (
-              <div className="mt-6 bg-white rounded-lg shadow-md p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">行程摘要</h3>
-                    <p className="text-gray-600">
-                      已規劃 {tripPoints.length} 個地點
-                      {tripPoints.some(p => p.estimatedCost) && (
-                        <span className="ml-2">
-                          • 總預估費用：$
-                          {tripPoints
-                            .filter(p => p.estimatedCost)
-                            .reduce((sum, p) => sum + (p.estimatedCost || 0), 0)
-                            .toFixed(0)} NTD
-                        </span>
-                      )}
-                      {tripPoints.some(p => p.estimatedTime) && (
-                        <span className="ml-2">
-                          • 總預估時間：
-                          {tripPoints
-                            .filter(p => p.estimatedTime)
-                            .reduce((sum, p) => sum + (p.estimatedTime || 0), 0)} 分鐘
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={handleSaveTrip}
-                      className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                    >
-                      保存行程
-                    </button>
-                    <button
-                      onClick={handleClearAll}
-                      className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                    >
-                      清除全部
-                    </button>
-                  </div>
+            <div className="mt-6 bg-white rounded-lg shadow-md p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">行程摘要</h3>
+                  <p className="text-gray-600">
+                    {tripPoints.length > 0 ? (
+                      <>
+                        已規劃 {tripPoints.length} 個地點
+                        {tripPoints.some(p => p.estimatedCost) && (
+                          <span className="ml-2">
+                            • 總預估費用：$
+                            {tripPoints
+                              .filter(p => p.estimatedCost)
+                              .reduce((sum, p) => sum + (p.estimatedCost || 0), 0)
+                              .toFixed(0)} NTD
+                          </span>
+                        )}
+                        {tripPoints.some(p => p.estimatedTime) && (
+                          <span className="ml-2">
+                            • 總預估時間：
+                            {tripPoints
+                              .filter(p => p.estimatedTime)
+                              .reduce((sum, p) => sum + (p.estimatedTime || 0), 0)} 分鐘
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      '尚未添加任何地點，請先搜尋並添加地點到行程中'
+                    )}
+                  </p>
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={handleSaveTrip}
+                    disabled={tripPoints.length === 0}
+                    className={`px-6 py-2 rounded-lg transition-colors ${
+                      tripPoints.length === 0
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                        : 'bg-green-600 text-white hover:bg-green-700'
+                    }`}
+                  >
+                    保存行程
+                  </button>
+                  <button
+                    onClick={handleClearAll}
+                    disabled={tripPoints.length === 0}
+                    className={`px-6 py-2 rounded-lg transition-colors ${
+                      tripPoints.length === 0
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                        : 'bg-red-600 text-white hover:bg-red-700'
+                    }`}
+                  >
+                    清除全部
+                  </button>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* 保存的行程顯示區域 */}
             {showSavedTrip && savedTripData && (
@@ -618,7 +668,18 @@ const MapPlanning: React.FC = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-blue-900">已保存的行程</h3>
                   <button
-                    onClick={() => setShowSavedTrip(false)}
+                    onClick={() => {
+                      setShowSavedTrip(false);
+                      // 清除 localStorage 中的保存數據
+                      try {
+                        localStorage.removeItem('savedTripData');
+                        localStorage.removeItem('savedTripSummary');
+                        localStorage.removeItem('showSavedTrip');
+                        console.log('MapPlanning: 已清除保存的行程數據');
+                      } catch (error) {
+                        console.error('MapPlanning: 清除保存的行程數據失敗:', error);
+                      }
+                    }}
                     className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                   >
                     關閉
