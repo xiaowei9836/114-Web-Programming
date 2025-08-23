@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 
 interface Location {
   lat: number;
@@ -18,7 +18,12 @@ interface GoogleMapProps {
   onMarkerClick?: (location: Location) => void;
 }
 
-const GoogleMap: React.FC<GoogleMapProps> = ({
+// 定義 ref 的類型
+export interface GoogleMapRef {
+  clearTempMarker: () => void;
+}
+
+const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
   onLocationSelect,
   showLocationSearch = true,
   initialCenter = { lat: 25.0330, lng: 121.5654 }, // 台北市中心
@@ -26,7 +31,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   className = '',
   externalMarkers = [],
   onMarkerClick
-}) => {
+}, ref) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
   const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
@@ -49,6 +54,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   const clearMarkersRef = useRef<() => void>();
   const clearRouteRef = useRef<() => void>();
   const externalMarkersRef = useRef<google.maps.Marker[]>([]);
+  const tempMarkerRef = useRef<google.maps.Marker | null>(null);
 
   // 添加外部標記的函數
   const addExternalMarker = useCallback((location: Location) => {
@@ -99,6 +105,63 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       marker.setMap(null);
     });
     externalMarkersRef.current = [];
+  }, []);
+
+  // 添加臨時標記的函數（點擊地圖時顯示）
+  const addTempMarker = useCallback((location: Location) => {
+    if (!mapInstanceRef.current) return;
+
+    // 清除之前的臨時標記
+    if (tempMarkerRef.current) {
+      tempMarkerRef.current.setMap(null);
+    }
+
+    const marker = new google.maps.Marker({
+      map: mapInstanceRef.current,
+      position: { lat: location.lat, lng: location.lng },
+      title: location.name,
+      animation: google.maps.Animation.DROP,
+      // 使用藍色臨時標記，區分於已添加的紅色標記
+      icon: {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C8.13 2 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#3B82F6"/>
+          </svg>
+        `),
+        scaledSize: new google.maps.Size(24, 24),
+        anchor: new google.maps.Point(12, 24)
+      }
+    });
+
+    // 添加信息窗口
+    const infoWindow = new google.maps.InfoWindow({
+      content: `
+        <div style="padding: 10px;">
+          <h3 style="margin: 0 0 5px 0; font-size: 16px;">${location.name}</h3>
+          <p style="margin: 5px 0 0 0; color: #999; font-size: 12px;">${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}</p>
+          <p style="margin: 5px 0 0 0; color: #666; font-size: 12px;">點擊"添加地點"來保存此地點</p>
+        </div>
+      `
+    });
+
+    marker.addListener('click', () => {
+      infoWindow.open(mapInstanceRef.current, marker);
+    });
+
+    tempMarkerRef.current = marker;
+    
+    // 觸發地點選擇回調，讓父組件知道用戶選擇了這個位置
+    if (stableOnLocationSelect) {
+      stableOnLocationSelect(location);
+    }
+  }, [stableOnLocationSelect]);
+
+  // 清除臨時標記的函數
+  const clearTempMarker = useCallback(() => {
+    if (tempMarkerRef.current) {
+      tempMarkerRef.current.setMap(null);
+      tempMarkerRef.current = null;
+    }
   }, []);
 
   // 主要的地圖初始化 useEffect - 只在組件掛載時執行一次
@@ -198,9 +261,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
             name: '點擊的地點'
           };
           console.log('GoogleMap: 地圖點擊，位置:', location);
-          if (addMarkerRef.current) {
-            addMarkerRef.current(location);
-          }
+          addTempMarker(location); // 點擊地圖時添加臨時標記
         }
       });
 
@@ -279,11 +340,16 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     }
   }, []);
 
+  // 使用 useImperativeHandle 暴露給父組件的方法
+  useImperativeHandle(ref, () => ({
+    clearTempMarker: clearTempMarker,
+  }));
+
   return (
     <div className={`relative ${className}`}>
       <div ref={mapRef} className="w-full h-full min-h-[400px]" />
     </div>
   );
-};
+});
 
 export default GoogleMap;

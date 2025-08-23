@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import GoogleMap from '../components/GoogleMap';
+import GoogleMap, { type GoogleMapRef } from '../components/GoogleMap';
 
 interface TripPoint {
   id: string;
@@ -32,6 +32,7 @@ const MapPlanning: React.FC = () => {
   });
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef<number>();
+  const mapRef = useRef<GoogleMapRef>(null);
 
   // 使用 useCallback 穩定 handleLocationSelect 函數
   const handleLocationSelect = useCallback((location: {
@@ -43,6 +44,13 @@ const MapPlanning: React.FC = () => {
     console.log('MapPlanning: 收到地點選擇:', location);
     setSelectedLocation(location);
     setShowAddForm(true);
+  }, []);
+
+  // 清除臨時標記的函數
+  const clearTempMarker = useCallback(() => {
+    if (mapRef.current) {
+      mapRef.current.clearTempMarker();
+    }
   }, []);
 
   // 搜尋地點
@@ -123,6 +131,7 @@ const MapPlanning: React.FC = () => {
     setSelectedLocation(null);
     setShowAddForm(false);
     setNewPoint({ estimatedCost: '', estimatedTime: '', notes: '' });
+    clearTempMarker(); // 添加地點後清除臨時標記
   };
 
   const handleRemovePoint = (id: string) => {
@@ -340,6 +349,7 @@ const MapPlanning: React.FC = () => {
                   console.log('點擊地圖標記:', location);
                   // 可以添加點擊標記後的邏輯，比如顯示地點詳情
                 }}
+                ref={mapRef} // 將地圖實例傳遞給 GoogleMap 組件
               />
             </div>
           </div>
