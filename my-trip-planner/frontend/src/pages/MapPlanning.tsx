@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { DragDropContext, Droppable, Draggable, type DropResult } from 'react-beautiful-dnd';
 import GoogleMap, { type GoogleMapRef } from '../components/GoogleMap';
 
 // 穩定的 ID 生成器
@@ -70,36 +69,14 @@ const MapPlanning: React.FC = () => {
     setSelectedLocation(null);
   };
 
-  // 使用 useEffect 來管理拖曳狀態
+  // 使用 useEffect 來管理地點狀態
   useEffect(() => {
-    console.log('MapPlanning: tripPoints 變化，重新初始化拖曳狀態');
+    console.log('MapPlanning: tripPoints 變化，更新地點狀態');
     console.log('MapPlanning: 當前 tripPoints:', tripPoints.map(p => ({ id: p.id, name: p.location.name })));
   }, [tripPoints]);
 
-  // 使用 useMemo 穩定拖曳容器 ID
-  const droppableId = useMemo(() => 'trip-points', []);
-
-  // 使用 useMemo 穩定拖曳項目，避免 react-beautiful-dnd 的問題
-  const stableTripPoints = useMemo(() => {
-    return tripPoints.map((point, index) => ({
-      ...point,
-      // 確保 ID 是穩定的字符串
-      id: String(point.id),
-      // 添加穩定的索引
-      stableIndex: index
-    }));
-  }, [tripPoints]);
-
-  // 處理拖曳結束
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-
-    const items = Array.from(tripPoints);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    setTripPoints(items);
-  };
+  // 移除拖曳相關的狀態和函數
+  // 不再需要 droppableId 和 stableTripPoints
 
   // 搜尋地點
   const searchPlaces = async (query: string) => {
@@ -330,18 +307,20 @@ const MapPlanning: React.FC = () => {
                       onClick={() => {
                         if (tripPoints.length >= 2) {
                           const newOrder = [...tripPoints];
-                          const temp = newOrder[0];
-                          newOrder[0] = newOrder[1];
-                          newOrder[1] = temp;
-                          setTripPoints(newOrder);
-                          console.log('MapPlanning: 手動交換前兩個地點完成');
+                          // 將第一個地點移到最后
+                          const first = newOrder.shift();
+                          if (first) {
+                            newOrder.push(first);
+                            setTripPoints(newOrder);
+                            console.log('MapPlanning: 將第一個地點移到最后');
+                          }
                         }
                       }}
                       className="text-blue-600 hover:text-blue-700 text-sm font-medium px-2 py-1 border border-blue-300 rounded"
                       disabled={tripPoints.length < 2}
-                      title="手動交換前兩個地點"
+                      title="將第一個地點移到最后"
                     >
-                      交換順序
+                      首尾調換
                     </button>
                     <button
                       onClick={handleClearAll}
@@ -359,101 +338,102 @@ const MapPlanning: React.FC = () => {
                   <p className="text-sm">搜尋地點或點擊地圖來開始規劃行程</p>
                 </div>
               ) : (
-                <DragDropContext 
-                  key={`drag-context-${tripPoints.length}`}
-                  onDragEnd={handleDragEnd}
-                  onDragStart={(result) => {
-                    console.log('MapPlanning: 拖曳開始:', {
-                      draggableId: result.draggableId,
-                      sourceIndex: result.source.index,
-                      droppableId: result.source.droppableId
-                    });
-                  }}
-                >
-                  <Droppable droppableId={droppableId}>
-                    {(provided, snapshot) => {
-                      console.log('MapPlanning: Droppable 渲染:', {
-                        droppableId,
-                        isDraggingOver: snapshot.isDraggingOver,
-                        providedProps: Object.keys(provided)
-                      });
-                      
-                      return (
-                        <div
-                          {...provided.droppableProps}
-                          ref={provided.innerRef}
-                          className={`space-y-3 ${snapshot.isDraggingOver ? 'bg-blue-50' : ''}`}
-                        >
-                          {stableTripPoints.map((point, index) => {
-                            console.log('MapPlanning: 渲染拖曳項目:', {
-                              id: point.id,
-                              index,
-                              name: point.location.name
-                            });
+                <div className="space-y-3">
+                  {tripPoints.map((point, index) => {
+                    return (
+                      <div
+                        key={`${point.id}-${index}`}
+                        className={`border border-gray-200 rounded-lg p-4 bg-gray-50`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center mb-2">
+                              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full mr-2">
+                                {index + 1}
+                              </span>
+                              <h3 className="font-medium text-gray-900">{point.location.name}</h3>
+                              <span className="ml-2 text-red-500" title="地圖標記">📍</span>
+                            </div>
+                            {point.location.address && (
+                              <p className="text-sm text-gray-600 mb-2">{point.location.address}</p>
+                            )}
+                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                              {point.estimatedCost && (
+                                <span>💰 ${point.estimatedCost} NTD</span>
+                              )}
+                              {point.estimatedTime && (
+                                <span>⏰ {point.estimatedTime} 分鐘</span>
+                              )}
+                            </div>
+                            {point.notes && (
+                              <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
+                            )}
+                          </div>
+                          <div className="flex items-center space-x-1 ml-2">
+                            {/* 上移按鈕 */}
+                            <button
+                              onClick={() => {
+                                if (index > 0) {
+                                  const newOrder = [...tripPoints];
+                                  const temp = newOrder[index];
+                                  newOrder[index] = newOrder[index - 1];
+                                  newOrder[index - 1] = temp;
+                                  setTripPoints(newOrder);
+                                  console.log(`MapPlanning: 將 "${point.location.name}" 上移一位`);
+                                }
+                              }}
+                              disabled={index === 0}
+                              className={`p-1 rounded ${
+                                index === 0 
+                                  ? 'text-gray-300 cursor-not-allowed' 
+                                  : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                              }`}
+                              title={index === 0 ? '已是第一個' : '上移一位'}
+                            >
+                              ⬆️
+                            </button>
                             
-                            return (
-                              <Draggable 
-                                key={`${point.id}-${index}`}
-                                draggableId={point.id} 
-                                index={index}
-                              >
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    {...provided.dragHandleProps}
-                                    className={`border border-gray-200 rounded-lg p-4 bg-gray-50 cursor-move ${
-                                      snapshot.isDragging ? 'shadow-lg bg-blue-100' : ''
-                                    }`}
-                                    style={provided.draggableProps.style}
-                                  >
-                                    <div className="flex items-start justify-between">
-                                      <div className="flex-1">
-                                        <div className="flex items-center mb-2">
-                                          <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full mr-2">
-                                            {index + 1}
-                                          </span>
-                                          <h3 className="font-medium text-gray-900">{point.location.name}</h3>
-                                          <span className="ml-2 text-red-500" title="地圖標記">📍</span>
-                                        </div>
-                                        {point.location.address && (
-                                          <p className="text-sm text-gray-600 mb-2">{point.location.address}</p>
-                                        )}
-                                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                          {point.estimatedCost && (
-                                            <span>💰 ${point.estimatedCost} NTD</span>
-                                          )}
-                                          {point.estimatedTime && (
-                                            <span>⏰ {point.estimatedTime} 分鐘</span>
-                                          )}
-                                        </div>
-                                        {point.notes && (
-                                          <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
-                                        )}
-                                      </div>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleRemovePoint(point.id);
-                                        }}
-                                        onMouseDown={(e) => e.stopPropagation()}
-                                        className="text-red-500 hover:text-red-700 ml-2 p-1"
-                                        title="移除地點"
-                                      >
-                                        ✕
-                                      </button>
-                                    </div>
-                                  </div>
-                                )}
-                              </Draggable>
-                            );
-                          })}
-                          {provided.placeholder}
+                            {/* 下移按鈕 */}
+                            <button
+                              onClick={() => {
+                                if (index < tripPoints.length - 1) {
+                                  const newOrder = [...tripPoints];
+                                  const temp = newOrder[index];
+                                  newOrder[index] = newOrder[index + 1];
+                                  newOrder[index + 1] = temp;
+                                  setTripPoints(newOrder);
+                                  console.log(`MapPlanning: 將 "${point.location.name}" 下移一位`);
+                                }
+                              }}
+                              disabled={index === tripPoints.length - 1}
+                              className={`p-1 rounded ${
+                                index === tripPoints.length - 1 
+                                  ? 'text-gray-300 cursor-not-allowed' 
+                                  : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                              }`}
+                              title={index === tripPoints.length - 1 ? '已是最後一個' : '下移一位'}
+                            >
+                              ⬇️
+                            </button>
+                            
+                            {/* 移除按鈕 */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemovePoint(point.id);
+                              }}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded ml-1"
+                              title="移除地點"
+                            >
+                              ✕
+                            </button>
+                          </div>
                         </div>
-                      );
-                    }}
-                  </Droppable>
-                </DragDropContext>
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
           </div>
