@@ -309,10 +309,10 @@ const MapPlanning: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-2 py-2">
+      <div className="container mx-auto px-2 py-0">
         <div className="mb-2">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">地圖行程規劃</h1>
-          <p className="text-gray-600">在地圖上規劃您的旅行地點，創建完美的行程安排</p>
+          <p className="text-gray-600 mb-4">在地圖上規劃您的旅行地點，創建完美的行程安排</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
