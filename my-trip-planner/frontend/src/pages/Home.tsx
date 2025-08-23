@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Calendar, DollarSign, BookOpen, Bell, Globe } from 'lucide-react';
+import { MapPin, Calendar, DollarSign, BookOpen, Bell, Globe, Bot } from 'lucide-react';
+import { useAIChat } from '../contexts/AIChatContext';
 
 const Home: React.FC = () => {
+  const { openChat } = useAIChat();
+  
   const features = [
     {
       icon: <Globe className="h-12 w-12 text-blue-600" />,
@@ -29,13 +32,21 @@ const Home: React.FC = () => {
       icon: <Bell className="h-12 w-12 text-purple-600" />,
       title: '旅行提醒',
       description: '設置重要提醒，如航班時間、酒店入住等',
-      color: 'bg-purple-50'
+      color: 'bg-purple-50',
+      link: '/trips'
     },
     {
       icon: <BookOpen className="h-12 w-12 text-red-600" />,
       title: '旅行日記',
       description: '記錄旅行中的美好時刻，分享照片和感受',
-      color: 'bg-red-50'
+      color: 'bg-red-50',
+      link: '/trips'
+    },
+    {
+      icon: <Bot className="h-12 w-12 text-indigo-600" />,
+      title: 'AI諮詢',
+      description: '智能顧問，提供旅遊行程、預算等專業建議',
+      color: 'bg-indigo-50'
     }
   ];
 
@@ -105,11 +116,33 @@ const Home: React.FC = () => {
                       <span className="text-blue-600 text-sm font-medium">點擊體驗 →</span>
                     ) : feature.title === '行程安排' ? (
                       <span className="text-green-600 text-sm font-medium">點擊安排 →</span>
-                    ) : (
+                    ) : feature.title === '預算管理' ? (
                       <span className="text-yellow-600 text-sm font-medium">點擊管理 →</span>
-                    )}
+                    ) : feature.title === '旅行提醒' ? (
+                      <span className="text-purple-600 text-sm font-medium">點擊提醒 →</span>
+                    ) : feature.title === '旅行日記' ? (
+                      <span className="text-red-600 text-sm font-medium">點擊記錄 →</span>
+                    ) : null}
                   </div>
                 </Link>
+              ) : feature.title === 'AI諮詢' ? (
+                <button
+                  onClick={openChat}
+                  className={`${feature.color} p-8 rounded-2xl text-center hover:shadow-lg transition-shadow duration-300 block w-full`}
+                >
+                  <div className="flex justify-center mb-4">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {feature.description}
+                  </p>
+                  <div className="mt-4">
+                    <span className="text-indigo-600 text-sm font-medium">點擊諮詢 →</span>
+                  </div>
+                </button>
               ) : (
                 <div className={`${feature.color} p-8 rounded-2xl text-center`}>
                   <div className="flex justify-center mb-4">
@@ -157,6 +190,7 @@ const Home: React.FC = () => {
           </div>
         </div>
       </section>
+      
     </div>
   );
 };

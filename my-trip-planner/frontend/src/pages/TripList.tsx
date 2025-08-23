@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, MapPin, Calendar, DollarSign, Edit, Trash2 } from 'lucide-react';
+import { Plus, MapPin, Calendar, DollarSign, Edit, Trash2, Bot } from 'lucide-react';
+import { useAIChat } from '../contexts/AIChatContext';
 
 interface Trip {
   _id: string;
@@ -20,6 +21,7 @@ const TripList: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { openChat } = useAIChat();
 
   // 後端 API 端點配置
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
@@ -121,7 +123,7 @@ const TripList: React.FC = () => {
             className="btn-primary inline-flex items-center space-x-2"
           >
             <Plus className="h-5 w-5" />
-            <span>創建新旅行</span>
+            <span>創建旅行</span>
           </Link>
         </div>
         
@@ -146,15 +148,27 @@ const TripList: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">我的旅行</h1>
-        <Link
-          to="/create"
-          className="btn-primary inline-flex items-center space-x-2"
-        >
-          <Plus className="h-5 w-5" />
-          <span>創建新旅行</span>
-        </Link>
+      <div className="relative mb-4">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">我的旅行</h1>
+          <p className="text-gray-600">管理您的旅行計劃，查看行程安排和預算狀況</p>
+        </div>
+        <div className="absolute top-0 right-0 flex items-center space-x-3">
+          <Link
+            to="/create"
+            className="btn-primary inline-flex items-center space-x-2"
+          >
+            <Plus className="h-5 w-5" />
+            <span>創建旅行</span>
+          </Link>
+          <button
+            onClick={openChat}
+            className="btn-secondary inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white"
+          >
+            <Bot className="h-5 w-5" />
+            <span>AI諮詢</span>
+          </button>
+        </div>
       </div>
 
       {trips.length === 0 ? (
@@ -232,6 +246,7 @@ const TripList: React.FC = () => {
           ))}
         </div>
       )}
+
     </div>
   );
 };

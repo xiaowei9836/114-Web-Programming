@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, DollarSign, Save } from 'lucide-react';
+import { MapPin, Calendar, DollarSign, Save, Bot } from 'lucide-react';
+import { useAIChat } from '../contexts/AIChatContext';
 
 interface TripForm {
   title: string;
@@ -28,6 +29,7 @@ const CreateTrip: React.FC = () => {
     }
   });
   const [loading, setLoading] = useState(false);
+  const { openChat } = useAIChat();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -88,7 +90,16 @@ const CreateTrip: React.FC = () => {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="card">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">創建新旅行</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">創建旅行</h1>
+          <button
+            onClick={openChat}
+            className="btn-secondary inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white"
+          >
+            <Bot className="h-5 w-5" />
+            <span>AI諮詢</span>
+          </button>
+        </div>
         
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* 基本信息 */}
@@ -256,6 +267,7 @@ const CreateTrip: React.FC = () => {
           </div>
         </form>
       </div>
+
     </div>
   );
 };

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import GoogleMap, { type GoogleMapRef } from '../components/GoogleMap';
+import { Bot } from 'lucide-react';
+import { useAIChat } from '../contexts/AIChatContext';
 
 // 穩定的 ID 生成器
 let idCounter = 0;
@@ -66,6 +68,7 @@ const MapPlanning: React.FC = () => {
   const [savedTripSummary, setSavedTripSummary] = useState<string>('');
   const [showSavedTrip, setShowSavedTrip] = useState(false);
   const [savedTrips, setSavedTrips] = useState<TripData[]>([]); // 新增狀態來保存所有行程
+  const { openChat } = useAIChat();
   const searchTimeoutRef = useRef<number>();
   const mapRef = useRef<GoogleMapRef>(null);
 
@@ -324,8 +327,19 @@ const MapPlanning: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-2 py-0">
         <div className="mb-2">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">地圖行程規劃</h1>
-          <p className="text-gray-600 mb-4">在地圖上規劃您的旅行地點，創建完美的行程安排</p>
+          <div className="relative mb-4">
+            <div className="text-center">
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">地圖行程規劃</h1>
+              <p className="text-gray-600">在地圖上規劃您的旅行地點，創建完美的行程安排</p>
+            </div>
+            <button
+              onClick={openChat}
+              className="absolute top-0 right-0 btn-secondary inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              <Bot className="h-5 w-5" />
+              <span>AI諮詢</span>
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -761,6 +775,7 @@ const MapPlanning: React.FC = () => {
           </div>
         </div>
       </div>
+      
     </div>
   );
 };
