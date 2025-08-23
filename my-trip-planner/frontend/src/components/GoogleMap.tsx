@@ -97,6 +97,31 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
       marker.setIcon(null); // 使用默認圖標
     });
 
+    // 創建編號標籤
+    const label = new google.maps.Marker({
+      position: { lat: location.lat, lng: location.lng },
+      map: mapInstanceRef.current,
+      icon: {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="10" cy="10" r="10" fill="#1f2937" stroke="white" stroke-width="2"/>
+            <text x="10" y="14" font-family="Arial" font-size="12" font-weight="bold" fill="white" text-anchor="middle">${externalMarkersRef.current.length + 1}</text>
+          </svg>
+        `),
+        scaledSize: new google.maps.Size(20, 20),
+        anchor: new google.maps.Point(10, 10)
+      },
+      title: `#${externalMarkersRef.current.length + 1}`,
+      zIndex: 1000 // 確保標籤在標記上方
+    });
+
+    // 將標籤附加到標記
+    // marker.setLabel(label); // 不需要這行，標籤已經是獨立的標記
+
+    // 將標籤添加到標記數組中，以便後續清除
+    externalMarkersRef.current.push(marker);
+    externalMarkersRef.current.push(label);
+
     console.log('GoogleMap: 外部標記創建成功，設置到地圖');
     console.log('GoogleMap: 標記位置:', marker.getPosition());
     console.log('GoogleMap: 標記地圖:', marker.getMap());
@@ -115,7 +140,7 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
       console.log('GoogleMap: 標記驗證 - 動畫:', marker.getAnimation());
     }, 100);
     
-    externalMarkersRef.current.push(marker);
+    // externalMarkersRef.current.push(marker); // 移除此行，因為標籤已經是獨立的標記
   }, []);
 
   // 清除所有外部標記的函數
