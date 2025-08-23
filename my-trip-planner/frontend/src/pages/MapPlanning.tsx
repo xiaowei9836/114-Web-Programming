@@ -25,22 +25,18 @@ interface TripPoint {
 }
 
 const MapPlanning: React.FC = () => {
-  const [tripPoints, setTripPoints] = useState<TripPoint[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<google.maps.places.PlaceResult[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState<{
-    lat: number;
-    lng: number;
-    name: string;
-    address?: string;
-  } | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [tripPoints, setTripPoints] = useState<TripPoint[]>([]);
   const [newPoint, setNewPoint] = useState({
     estimatedCost: '',
     estimatedTime: '',
     notes: ''
   });
-  const [isSearching, setIsSearching] = useState(false);
+  const [showOrderEdit, setShowOrderEdit] = useState(false);
   const searchTimeoutRef = useRef<number>();
   const mapRef = useRef<GoogleMapRef>(null);
 
@@ -301,14 +297,29 @@ const MapPlanning: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900">行程地點</h2>
-                {tripPoints.length > 0 && (
-                  <button
-                    onClick={handleClearAll}
-                    className="text-red-600 hover:text-red-700 text-sm font-medium"
-                  >
-                    清除全部
-                  </button>
-                )}
+                <div className="flex items-center space-x-2">
+                  {tripPoints.length > 0 && (
+                    <>
+                      <button
+                        onClick={() => setShowOrderEdit(!showOrderEdit)}
+                        className={`px-3 py-1 text-sm font-medium rounded border transition-colors ${
+                          showOrderEdit
+                            ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                        }`}
+                        title={showOrderEdit ? '關閉順序編輯' : '開啟順序編輯'}
+                      >
+                        {showOrderEdit ? '關閉編輯' : '修改順序'}
+                      </button>
+                      <button
+                        onClick={handleClearAll}
+                        className="text-red-600 hover:text-red-700 text-sm font-medium"
+                      >
+                        清除全部
+                      </button>
+                    </>
+                  )}
+                </div>
               </div>
               
               {tripPoints.length === 0 ? (
@@ -349,32 +360,36 @@ const MapPlanning: React.FC = () => {
                             )}
                           </div>
                           <div className="flex items-center space-x-2 ml-2">
-                            {/* 直接修改順序輸入框 */}
-                            <div className="flex items-center space-x-1">
-                              <span className="text-xs text-gray-500">去</span>
-                              <input
-                                type="number"
-                                min="1"
-                                max={tripPoints.length}
-                                value={index + 1}
-                                onChange={(e) => {
-                                  const newPosition = parseInt(e.target.value);
-                                  if (newPosition >= 1 && newPosition <= tripPoints.length && newPosition !== index + 1) {
-                                    // 創建新的順序數組
-                                    const newOrder = [...tripPoints];
-                                    // 移除當前地點
-                                    const [movedItem] = newOrder.splice(index, 1);
-                                    // 插入到新位置（減1是因為數組索引從0開始）
-                                    newOrder.splice(newPosition - 1, 0, movedItem);
-                                    setTripPoints(newOrder);
-                                    console.log(`MapPlanning: 將 "${point.location.name}" 從第 ${index + 1} 位移動到第 ${newPosition} 位`);
-                                  }
-                                }}
-                                className="w-12 px-2 py-1 text-xs border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                title={`輸入 1-${tripPoints.length} 來調整順序`}
-                              />
-                              <span className="text-xs text-gray-500">位</span>
-                            </div>
+                            {/* 直接修改順序輸入框 - 根據showOrderEdit狀態顯示/隱藏 */}
+                            {showOrderEdit ? (
+                              <div className="flex items-center space-x-1">
+                                <span className="text-xs text-gray-500">去第</span>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max={tripPoints.length}
+                                  value={index + 1}
+                                  onChange={(e) => {
+                                    const newPosition = parseInt(e.target.value);
+                                    if (newPosition >= 1 && newPosition <= tripPoints.length && newPosition !== index + 1) {
+                                      // 創建新的順序數組
+                                      const newOrder = [...tripPoints];
+                                      // 移除當前地點
+                                      const [movedItem] = newOrder.splice(index, 1);
+                                      // 插入到新位置（減1是因為數組索引從0開始）
+                                      newOrder.splice(newPosition - 1, 0, movedItem);
+                                      setTripPoints(newOrder);
+                                      console.log(`MapPlanning: 將 "${point.location.name}" 從第 ${index + 1} 位移動到第 ${newPosition} 位`);
+                                    }
+                                  }}
+                                  className="w-12 px-2 py-1 text-xs border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                  title={`輸入 1-${tripPoints.length} 來調整順序`}
+                                />
+                                <span className="text-xs text-gray-500">位</span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400 italic">點擊"修改順序"開啟編輯</span>
+                            )}
                             
                             {/* 上移按鈕 */}
                             <button
