@@ -99,42 +99,55 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         // 添加搜索框
         if (showSearchBox) {
           const input = document.createElement('input');
-          input.className = 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500';
+          input.type = 'text';
           input.placeholder = '搜尋地點...';
-          
-          const searchBoxContainer = document.createElement('div');
-          searchBoxContainer.className = 'absolute top-4 left-4 z-10 w-80';
-          searchBoxContainer.appendChild(input);
-          
-          mapRef.current.appendChild(searchBoxContainer);
-          
-          const newSearchBox = new google.maps.places.SearchBox(input);
+          input.className = 'search-input';
+          input.style.cssText = `
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 300px;
+            height: 40px;
+            padding: 0 12px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            font-size: 14px;
+            outline: none;
+            z-index: 1000;
+          `;
 
-          // 搜索框事件
-          newSearchBox.addListener('places_changed', () => {
-            const places = newSearchBox.getPlaces();
-            if (places && places.length > 0) {
-              const place = places[0];
-              if (place.geometry && place.geometry.location) {
-                const location = {
-                  lat: place.geometry.location.lat(),
-                  lng: place.geometry.location.lng(),
-                  name: place.name || '未知地點',
-                  address: place.formatted_address
-                };
-                
-                // 移动地图到新位置
-                newMap.setCenter(place.geometry.location);
-                newMap.setZoom(15);
-                
-                // 添加標記
-                addMarker(location);
-                
-                // 回调
-                onLocationSelect?.(location);
+          // 創建 Autocomplete 而不是 SearchBox
+          const autocomplete = new google.maps.places.Autocomplete(input);
+          autocomplete.bindTo('bounds', newMap);
+
+          // 監聽地點選擇
+          autocomplete.addListener('place_changed', () => {
+            const place = autocomplete.getPlace();
+            if (place.geometry && place.geometry.location) {
+              const location: Location = {
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng(),
+                name: place.name || '未知地點',
+                address: place.formatted_address
+              };
+
+              // 移動地圖到選中地點
+              newMap.setCenter(place.geometry.location);
+              newMap.setZoom(15);
+
+              // 添加標記
+              addMarker(location);
+
+              // 觸發地點選擇回調
+              if (onLocationSelect) {
+                onLocationSelect(location);
               }
             }
           });
+
+          // 將搜索框添加到地圖
+          newMap.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
         }
 
         setIsLoading(false);
