@@ -721,7 +721,9 @@ const MapPlanning: React.FC = () => {
                   {savedTrips.map((trip, index) => (
                     <div key={trip.id} className="bg-white rounded-lg p-4 border border-blue-200">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-blue-900">{trip.name}</h4>
+                        <h4 className="font-medium text-blue-900">
+                          行程{index + 1} 保存於：{new Date(trip.createdAt).toLocaleString('zh-TW')}
+                        </h4>
                         <button
                           onClick={() => {
                             setSavedTrips(prev => prev.filter(t => t.id !== trip.id));
@@ -740,11 +742,15 @@ const MapPlanning: React.FC = () => {
                           刪除
                         </button>
                       </div>
-                      <div className="text-sm text-gray-600 mb-2">
-                        保存於：{new Date(trip.createdAt).toLocaleString('zh-TW')}
+                      <div className="text-sm text-gray-700 mb-2">
+                        {trip.points.map((point, pointIndex) => (
+                          <span key={pointIndex}>
+                            {point.name}
+                            {pointIndex < trip.points.length - 1 && ' -> '}
+                          </span>
+                        ))}
                       </div>
                       <div className="text-sm text-gray-700">
-                        <div>地點數量：{trip.totalPoints} 個</div>
                         {trip.totalEstimatedCost > 0 && (
                           <div>總預估費用：${trip.totalEstimatedCost} NTD</div>
                         )}
