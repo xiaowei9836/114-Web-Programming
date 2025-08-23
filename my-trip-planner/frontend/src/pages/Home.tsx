@@ -74,25 +74,36 @@ const Home: React.FC = () => {
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <div
-              key={index}
-              className={`${feature.color} p-8 rounded-2xl text-center hover:shadow-lg transition-shadow duration-300 ${
-                feature.link ? 'cursor-pointer' : ''
-              }`}
-              onClick={feature.link ? () => window.location.href = feature.link : undefined}
-            >
-              <div className="flex justify-center mb-4">
-                {feature.icon}
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-gray-600 leading-relaxed">
-                {feature.description}
-              </p>
-              {feature.link && (
-                <div className="mt-4">
-                  <span className="text-blue-600 text-sm font-medium">點擊體驗 →</span>
+            <div key={index}>
+              {feature.link ? (
+                <Link
+                  to={feature.link}
+                  className={`${feature.color} p-8 rounded-2xl text-center hover:shadow-lg transition-shadow duration-300 block`}
+                >
+                  <div className="flex justify-center mb-4">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {feature.description}
+                  </p>
+                  <div className="mt-4">
+                    <span className="text-blue-600 text-sm font-medium">點擊體驗 →</span>
+                  </div>
+                </Link>
+              ) : (
+                <div className={`${feature.color} p-8 rounded-2xl text-center`}>
+                  <div className="flex justify-center mb-4">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                    {feature.title}
+                  </h3>
+                  <p className="text-gray-600 leading-relaxed">
+                    {feature.description}
+                  </p>
                 </div>
               )}
             </div>
