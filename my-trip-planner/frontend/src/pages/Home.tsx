@@ -47,7 +47,7 @@ const Home: React.FC = () => {
         }}
       >
         {/* 半透明黑色遮罩，確保文字可讀性 */}
-        <div className="absolute inset-0 bg-black bg-opacity-40 rounded-3xl"></div>
+        <div className="absolute inset-0 bg-black bg-opacity-5 rounded-3xl"></div>
         
         {/* 內容區域 */}
         <div className="relative z-10 max-w-4xl mx-auto px-6">
@@ -60,14 +60,14 @@ const Home: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to="/map-planning"
-              className="btn-primary text-lg px-8 py-4 inline-flex items-center space-x-2"
+              className="btn-primary text-lg px-5 py-3 inline-flex items-center space-x-2"
             >
               <Globe className="h-5 w-5" />
               <span>開始地圖規劃</span>
             </Link>
             <Link
               to="/create"
-              className="btn-secondary text-lg px-8 py-4 inline-flex items-center space-x-2"
+              className="btn-secondary text-lg px-5 py-3 inline-flex items-center space-x-2"
             >
               <MapPin className="h-5 w-5" />
               <span>創建旅行</span>
@@ -79,7 +79,7 @@ const Home: React.FC = () => {
       {/* 功能特性 */}
       <section>
         <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
-          為什麼選擇我們的旅行規劃器？
+          為什麼選擇完美旅行規劃器？
         </h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
