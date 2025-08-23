@@ -70,6 +70,20 @@ const MapPlanning: React.FC = () => {
     setSelectedLocation(null);
   };
 
+  // 使用 useMemo 穩定拖曳容器 ID
+  const droppableId = useMemo(() => 'trip-points', []);
+
+  // 使用 useMemo 穩定拖曳項目，避免 react-beautiful-dnd 的問題
+  const stableTripPoints = useMemo(() => {
+    return tripPoints.map((point, index) => ({
+      ...point,
+      // 確保 ID 是穩定的字符串
+      id: String(point.id),
+      // 添加穩定的索引
+      stableIndex: index
+    }));
+  }, [tripPoints]);
+
   // 處理拖曳結束
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -302,33 +316,19 @@ const MapPlanning: React.FC = () => {
 
             {/* 行程地點列表 */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900">行程地點</h2>
                 <div className="flex items-center space-x-2">
+                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    拖曳排序
+                  </span>
                   {tripPoints.length > 0 && (
-                    <>
-                      <button
-                        onClick={handleClearAll}
-                        className="text-red-600 hover:text-red-700 text-sm font-medium"
-                      >
-                        清除全部
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (tripPoints.length >= 2) {
-                            const newOrder = [...tripPoints];
-                            const temp = newOrder[0];
-                            newOrder[0] = newOrder[1];
-                            newOrder[1] = temp;
-                            setTripPoints(newOrder);
-                          }
-                        }}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                        disabled={tripPoints.length < 2}
-                      >
-                        交換前兩個
-                      </button>
-                    </>
+                    <button
+                      onClick={handleClearAll}
+                      className="text-red-600 hover:text-red-700 text-sm font-medium"
+                    >
+                      清除全部
+                    </button>
                   )}
                 </div>
               </div>
@@ -340,73 +340,98 @@ const MapPlanning: React.FC = () => {
                   <p className="text-sm">搜尋地點或點擊地圖來開始規劃</p>
                 </div>
               ) : (
-                <DragDropContext onDragEnd={handleDragEnd}>
-                  <Droppable droppableId="trip-points">
-                    {(provided, snapshot) => (
-                      <div
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        className={`space-y-3 ${snapshot.isDraggingOver ? 'bg-blue-50' : ''}`}
-                      >
-                        {tripPoints.map((point, index) => (
-                          <Draggable 
-                            key={point.id} 
-                            draggableId={point.id} 
-                            index={index}
-                          >
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`border border-gray-200 rounded-lg p-4 bg-gray-50 cursor-move ${
-                                  snapshot.isDragging ? 'shadow-lg bg-blue-100' : ''
-                                }`}
-                                style={provided.draggableProps.style}
+                <DragDropContext 
+                  onDragEnd={handleDragEnd}
+                  onDragStart={(result) => {
+                    console.log('MapPlanning: 拖曳開始:', {
+                      draggableId: result.draggableId,
+                      sourceIndex: result.source.index,
+                      droppableId: result.source.droppableId
+                    });
+                  }}
+                >
+                  <Droppable droppableId={droppableId}>
+                    {(provided, snapshot) => {
+                      console.log('MapPlanning: Droppable 渲染:', {
+                        droppableId,
+                        isDraggingOver: snapshot.isDraggingOver,
+                        providedProps: Object.keys(provided)
+                      });
+                      
+                      return (
+                        <div
+                          {...provided.droppableProps}
+                          ref={provided.innerRef}
+                          className={`space-y-3 ${snapshot.isDraggingOver ? 'bg-blue-50' : ''}`}
+                        >
+                          {stableTripPoints.map((point, index) => {
+                            console.log('MapPlanning: 渲染拖曳項目:', {
+                              id: point.id,
+                              index,
+                              name: point.location.name
+                            });
+                            
+                            return (
+                              <Draggable 
+                                key={point.id} 
+                                draggableId={point.id} 
+                                index={index}
                               >
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <div className="flex items-center mb-2">
-                                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full mr-2">
-                                        {index + 1}
-                                      </span>
-                                      <h3 className="font-medium text-gray-900">{point.location.name}</h3>
-                                      <span className="ml-2 text-red-500" title="地圖標記">📍</span>
-                                    </div>
-                                    {point.location.address && (
-                                      <p className="text-sm text-gray-600 mb-2">{point.location.address}</p>
-                                    )}
-                                    <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                      {point.estimatedCost && (
-                                        <span>💰 ${point.estimatedCost} NTD</span>
-                                      )}
-                                                                              {point.estimatedTime && (
-                                          <span>⏰ {point.estimatedTime} 分鐘</span>
-                                        )}
-                                    </div>
-                                    {point.notes && (
-                                      <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
-                                    )}
-                                  </div>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleRemovePoint(point.id);
-                                    }}
-                                    onMouseDown={(e) => e.stopPropagation()}
-                                    className="text-red-500 hover:text-red-700 ml-2 p-1"
-                                    title="移除地點"
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                    className={`border border-gray-200 rounded-lg p-4 bg-gray-50 cursor-move ${
+                                      snapshot.isDragging ? 'shadow-lg bg-blue-100' : ''
+                                    }`}
+                                    style={provided.draggableProps.style}
                                   >
-                                    ✕
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1">
+                                        <div className="flex items-center mb-2">
+                                          <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full mr-2">
+                                            {index + 1}
+                                          </span>
+                                          <h3 className="font-medium text-gray-900">{point.location.name}</h3>
+                                          <span className="ml-2 text-red-500" title="地圖標記">📍</span>
+                                        </div>
+                                        {point.location.address && (
+                                          <p className="text-sm text-gray-600 mb-2">{point.location.address}</p>
+                                        )}
+                                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                          {point.estimatedCost && (
+                                            <span>💰 ${point.estimatedCost} NTD</span>
+                                          )}
+                                                                              {point.estimatedTime && (
+                                              <span>⏰ {point.estimatedTime} 分鐘</span>
+                                            )}
+                                        </div>
+                                        {point.notes && (
+                                          <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
+                                        )}
+                                      </div>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleRemovePoint(point.id);
+                                        }}
+                                        onMouseDown={(e) => e.stopPropagation()}
+                                        className="text-red-500 hover:text-red-700 ml-2 p-1"
+                                        title="移除地點"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </Draggable>
+                            );
+                          })}
+                          {provided.placeholder}
+                        </div>
+                      );
+                    }}
                   </Droppable>
                 </DragDropContext>
               )}
