@@ -18,7 +18,7 @@ export interface Message {
 export const OLLAMA_CONFIG = {
   BASE_URL: import.meta.env.VITE_OLLAMA_BASE_URL || 'http://localhost:11434',
   DEFAULT_MODEL: import.meta.env.VITE_OLLAMA_MODEL || 'llama3.1:8b',
-  TIMEOUT: 30000, // 30秒超時
+  TIMEOUT: 120000, // 增加到 120 秒超時 (2分鐘)
   // 新增：雲端部署支援
   CLOUD_URL: import.meta.env.VITE_OLLAMA_CLOUD_URL || '',
   IS_CLOUD: import.meta.env.VITE_OLLAMA_CLOUD_URL ? true : false,
@@ -106,6 +106,9 @@ export class OllamaProvider implements AIProvider {
 
   async sendMessage(message: string, history: Message[]): Promise<string> {
     try {
+      // 預載入模型以減少回應延遲
+      await this.preloadModel();
+      
       const messages = [
         { role: 'system', content: TRAVEL_SYSTEM_PROMPT },
         ...history,
@@ -128,6 +131,11 @@ export class OllamaProvider implements AIProvider {
           options: {
             temperature: 0.7,
             top_p: 0.9,
+            top_k: 40,
+            repeat_penalty: 1.1,
+            num_predict: 512, // 限制回應長度以減少時間
+            num_ctx: 2048,    // 減少上下文長度
+            seed: 42,         // 固定種子以增加一致性
           }
         }),
         signal: controller.signal
@@ -146,7 +154,7 @@ export class OllamaProvider implements AIProvider {
       
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          throw new Error('Ollama 回應超時，請稍後再試。');
+          throw new Error(`Ollama 回應超時 (${OLLAMA_CONFIG.TIMEOUT / 1000}秒)，請稍後再試。\n\n建議：\n1. 檢查系統資源是否充足\n2. 嘗試使用較小的模型 (如 gpt-oss:20b)\n3. 重新啟動 Ollama 服務`);
         } else if (error.message.includes('API 錯誤')) {
           throw new Error(`Ollama API 錯誤: ${error.message}`);
         } else if (error.message.includes('fetch')) {
@@ -155,6 +163,32 @@ export class OllamaProvider implements AIProvider {
       }
       
       throw new Error(`Ollama 錯誤: ${error instanceof Error ? error.message : '未知錯誤'}`);
+    }
+  }
+
+  async preloadModel(): Promise<void> {
+    try {
+      // 發送一個輕量級的請求來預載入模型
+      const response = await fetch(`${OLLAMA_CONFIG.BASE_URL}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: OLLAMA_CONFIG.DEFAULT_MODEL,
+          prompt: 'hi',
+          stream: false,
+          options: {
+            num_predict: 1, // 只生成一個 token 來預載入模型
+          }
+        })
+      });
+      
+      if (response.ok) {
+        console.log('模型預載入成功');
+      }
+    } catch (error) {
+      console.log('模型預載入失敗，繼續正常流程:', error);
     }
   }
 
@@ -226,6 +260,11 @@ export class OllamaCloudProvider implements AIProvider {
           options: {
             temperature: 0.7,
             top_p: 0.9,
+            top_k: 40,
+            repeat_penalty: 1.1,
+            num_predict: 512, // 限制回應長度以減少時間
+            num_ctx: 2048,    // 減少上下文長度
+            seed: 42,         // 固定種子以增加一致性
           }
         }),
         signal: AbortSignal.timeout(OLLAMA_CONFIG.TIMEOUT)
