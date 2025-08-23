@@ -9,7 +9,7 @@ const generateStableId = () => {
 };
 
 // 行程點數量限制
-const MAX_TRIP_POINTS = 100;
+const MAX_TRIP_POINTS = 99;
 
 // 定義類型
 interface Location {
