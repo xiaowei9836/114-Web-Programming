@@ -58,8 +58,13 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
 
   // 添加外部標記的函數
   const addExternalMarker = useCallback((location: Location) => {
-    if (!mapInstanceRef.current) return;
+    console.log('GoogleMap: addExternalMarker 被調用，位置:', location);
+    if (!mapInstanceRef.current) {
+      console.error('GoogleMap: mapInstanceRef.current 為空，無法添加外部標記');
+      return;
+    }
 
+    console.log('GoogleMap: 創建新的外部標記');
     const marker = new google.maps.Marker({
       map: mapInstanceRef.current,
       position: { lat: location.lat, lng: location.lng },
@@ -77,27 +82,9 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
       }
     });
 
-    // 添加信息窗口
-    const infoWindow = new google.maps.InfoWindow({
-      content: `
-        <div style="padding: 10px;">
-          <h3 style="margin: 0 0 5px 0; font-size: 16px;">${location.name}</h3>
-          ${location.address ? `<p style="margin: 0; color: #666; font-size: 14px;">${location.address}</p>` : ''}
-          <p style="margin: 5px 0 0 0; color: #999; font-size: 12px;">${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}</p>
-        </div>
-      `
-    });
-
-    marker.addListener('click', () => {
-      infoWindow.open(mapInstanceRef.current, marker);
-      // 觸發標記點擊回調
-      if (onMarkerClick) {
-        onMarkerClick(location);
-      }
-    });
-
+    console.log('GoogleMap: 外部標記創建成功，設置到地圖');
     externalMarkersRef.current.push(marker);
-  }, [onMarkerClick]);
+  }, []);
 
   // 清除外部標記的函數
   const clearExternalMarkers = useCallback(() => {
@@ -109,13 +96,19 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
 
   // 添加臨時標記的函數（點擊地圖時顯示）
   const addTempMarker = useCallback((location: Location) => {
-    if (!mapInstanceRef.current) return;
+    console.log('GoogleMap: addTempMarker 被調用，位置:', location);
+    if (!mapInstanceRef.current) {
+      console.error('GoogleMap: mapInstanceRef.current 為空，無法添加臨時標記');
+      return;
+    }
 
     // 清除之前的臨時標記
     if (tempMarkerRef.current) {
+      console.log('GoogleMap: 清除之前的臨時標記');
       tempMarkerRef.current.setMap(null);
     }
 
+    console.log('GoogleMap: 創建新的臨時標記');
     const marker = new google.maps.Marker({
       map: mapInstanceRef.current,
       position: { lat: location.lat, lng: location.lng },
@@ -133,25 +126,12 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
       }
     });
 
-    // 添加信息窗口
-    const infoWindow = new google.maps.InfoWindow({
-      content: `
-        <div style="padding: 10px;">
-          <h3 style="margin: 0 0 5px 0; font-size: 16px;">${location.name}</h3>
-          <p style="margin: 5px 0 0 0; color: #999; font-size: 12px;">${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}</p>
-          <p style="margin: 5px 0 0 0; color: #666; font-size: 12px;">點擊"添加地點"來保存此地點</p>
-        </div>
-      `
-    });
-
-    marker.addListener('click', () => {
-      infoWindow.open(mapInstanceRef.current, marker);
-    });
-
+    console.log('GoogleMap: 臨時標記創建成功，設置到地圖');
     tempMarkerRef.current = marker;
     
     // 觸發地點選擇回調，讓父組件知道用戶選擇了這個位置
     if (stableOnLocationSelect) {
+      console.log('GoogleMap: 觸發 onLocationSelect 回調');
       stableOnLocationSelect(location);
     }
   }, [stableOnLocationSelect]);
@@ -290,13 +270,23 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
 
   // 處理外部標記變化的 useEffect
   useEffect(() => {
-    if (!mapInstanceRef.current || !isMapReady) return;
+    console.log('GoogleMap: 外部標記 useEffect 觸發');
+    console.log('GoogleMap: isMapReady:', isMapReady);
+    console.log('GoogleMap: mapInstanceRef.current:', !!mapInstanceRef.current);
+    console.log('GoogleMap: externalMarkers:', externalMarkers);
+    
+    if (!mapInstanceRef.current || !isMapReady) {
+      console.log('GoogleMap: 地圖未準備好，跳過外部標記處理');
+      return;
+    }
 
+    console.log('GoogleMap: 開始處理外部標記');
     // 清除現有的外部標記
     clearExternalMarkers();
 
     // 添加新的外部標記
     externalMarkers.forEach((location, index) => {
+      console.log(`GoogleMap: 添加外部標記 ${index + 1}:`, location);
       addExternalMarker(location);
     });
 

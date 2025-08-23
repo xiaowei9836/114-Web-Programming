@@ -344,12 +344,15 @@ const MapPlanning: React.FC = () => {
                 onLocationSelect={handleLocationSelect}
                 showLocationSearch={false}
                 className="h-96 rounded-lg border border-gray-200"
-                externalMarkers={tripPoints.map(point => point.location)}
+                externalMarkers={tripPoints.map(point => {
+                  console.log('MapPlanning: 傳遞外部標記:', point.location);
+                  return point.location;
+                })}
                 onMarkerClick={(location) => {
                   console.log('點擊地圖標記:', location);
                   // 可以添加點擊標記後的邏輯，比如顯示地點詳情
                 }}
-                ref={mapRef} // 將地圖實例傳遞給 GoogleMap 組件
+                ref={mapRef}
               />
             </div>
           </div>
