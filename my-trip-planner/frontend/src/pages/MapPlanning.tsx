@@ -70,6 +70,12 @@ const MapPlanning: React.FC = () => {
     setSelectedLocation(null);
   };
 
+  // 使用 useEffect 來管理拖曳狀態
+  useEffect(() => {
+    console.log('MapPlanning: tripPoints 變化，重新初始化拖曳狀態');
+    console.log('MapPlanning: 當前 tripPoints:', tripPoints.map(p => ({ id: p.id, name: p.location.name })));
+  }, [tripPoints]);
+
   // 使用 useMemo 穩定拖曳容器 ID
   const droppableId = useMemo(() => 'trip-points', []);
 
@@ -318,29 +324,43 @@ const MapPlanning: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-gray-900">行程地點</h2>
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                    拖曳排序
-                  </span>
-                  {tripPoints.length > 0 && (
+                {tripPoints.length > 0 && (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => {
+                        if (tripPoints.length >= 2) {
+                          const newOrder = [...tripPoints];
+                          const temp = newOrder[0];
+                          newOrder[0] = newOrder[1];
+                          newOrder[1] = temp;
+                          setTripPoints(newOrder);
+                          console.log('MapPlanning: 手動交換前兩個地點完成');
+                        }
+                      }}
+                      className="text-blue-600 hover:text-blue-700 text-sm font-medium px-2 py-1 border border-blue-300 rounded"
+                      disabled={tripPoints.length < 2}
+                      title="手動交換前兩個地點"
+                    >
+                      交換順序
+                    </button>
                     <button
                       onClick={handleClearAll}
                       className="text-red-600 hover:text-red-700 text-sm font-medium"
                     >
                       清除全部
                     </button>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
               
               {tripPoints.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                  <div className="text-4xl mb-2">🗺️</div>
-                  <p>尚未添加任何地點</p>
-                  <p className="text-sm">搜尋地點或點擊地圖來開始規劃</p>
+                  <p>還沒有添加任何地點</p>
+                  <p className="text-sm">搜尋地點或點擊地圖來開始規劃行程</p>
                 </div>
               ) : (
                 <DragDropContext 
+                  key={`drag-context-${tripPoints.length}`}
                   onDragEnd={handleDragEnd}
                   onDragStart={(result) => {
                     console.log('MapPlanning: 拖曳開始:', {
@@ -373,7 +393,7 @@ const MapPlanning: React.FC = () => {
                             
                             return (
                               <Draggable 
-                                key={point.id} 
+                                key={`${point.id}-${index}`}
                                 draggableId={point.id} 
                                 index={index}
                               >
@@ -403,9 +423,9 @@ const MapPlanning: React.FC = () => {
                                           {point.estimatedCost && (
                                             <span>💰 ${point.estimatedCost} NTD</span>
                                           )}
-                                                                              {point.estimatedTime && (
-                                              <span>⏰ {point.estimatedTime} 分鐘</span>
-                                            )}
+                                          {point.estimatedTime && (
+                                            <span>⏰ {point.estimatedTime} 分鐘</span>
+                                          )}
                                         </div>
                                         {point.notes && (
                                           <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
