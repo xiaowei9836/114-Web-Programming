@@ -28,57 +28,72 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer | null>(null);
 
   useEffect(() => {
-    if (!mapRef.current || !window.google) return;
-
-    const newMap = new google.maps.Map(mapRef.current, {
-      center: initialCenter,
-      zoom: initialZoom,
-      mapTypeId: google.maps.MapTypeId.ROADMAP,
-      mapTypeControl: true,
-      streetViewControl: true,
-      fullscreenControl: true,
-      zoomControl: true,
-      styles: [
-        {
-          featureType: 'poi',
-          elementType: 'labels',
-          stylers: [{ visibility: 'off' }]
-        }
-      ]
-    });
-
-    setMap(newMap);
-
-    // 創建路線渲染器
-    const newDirectionsRenderer = new google.maps.DirectionsRenderer({
-      suppressMarkers: true,
-      polylineOptions: {
-        strokeColor: '#3B82F6',
-        strokeWeight: 4,
-        strokeOpacity: 0.8
-      }
-    });
-    newDirectionsRenderer.setMap(newMap);
-    setDirectionsRenderer(newDirectionsRenderer);
-
-    // 添加地點搜尋功能
-    if (showLocationSearch) {
-      // 移除地圖上的搜尋框，因為搜尋功能現在在頁面左側
-      // 只保留地圖點擊功能
-      console.log('地圖搜尋功能已啟用，搜尋框在頁面左側');
+    if (!mapRef.current || !window.google) {
+      console.log('GoogleMap: 等待 Google Maps API 載入...');
+      return;
     }
 
-    // 地圖點擊事件
-    newMap.addListener('click', (event: google.maps.MapMouseEvent) => {
-      if (event.latLng) {
-        const location: Location = {
-          lat: event.latLng.lat(),
-          lng: event.latLng.lng(),
-          name: '點擊的地點'
-        };
-        addMarker(location);
+    console.log('GoogleMap: 開始初始化地圖');
+    console.log('GoogleMap: window.google 狀態:', !!window.google);
+    console.log('GoogleMap: window.google.maps 狀態:', !!window.google?.maps);
+
+    try {
+      const newMap = new google.maps.Map(mapRef.current, {
+        center: initialCenter,
+        zoom: initialZoom,
+        mapTypeId: google.maps.MapTypeId.ROADMAP,
+        mapTypeControl: true,
+        streetViewControl: true,
+        fullscreenControl: true,
+        zoomControl: true,
+        styles: [
+          {
+            featureType: 'poi',
+            elementType: 'labels',
+            stylers: [{ visibility: 'off' }]
+          }
+        ]
+      });
+
+      console.log('GoogleMap: 地圖創建成功');
+      setMap(newMap);
+
+      // 創建路線渲染器
+      const newDirectionsRenderer = new google.maps.DirectionsRenderer({
+        suppressMarkers: true,
+        polylineOptions: {
+          strokeColor: '#3B82F6',
+          strokeWeight: 4,
+          strokeOpacity: 0.8
+        }
+      });
+      newDirectionsRenderer.setMap(newMap);
+      setDirectionsRenderer(newDirectionsRenderer);
+
+      // 添加地點搜尋功能
+      if (showLocationSearch) {
+        // 移除地圖上的搜尋框，因為搜尋功能現在在頁面左側
+        // 只保留地圖點擊功能
+        console.log('地圖搜尋功能已啟用，搜尋框在頁面左側');
       }
-    });
+
+      // 地圖點擊事件
+      newMap.addListener('click', (event: google.maps.MapMouseEvent) => {
+        if (event.latLng) {
+          const location: Location = {
+            lat: event.latLng.lat(),
+            lng: event.latLng.lng(),
+            name: '點擊的地點'
+          };
+          console.log('GoogleMap: 地圖點擊，位置:', location);
+          addMarker(location);
+        }
+      });
+
+      console.log('GoogleMap: 地圖初始化完成');
+    } catch (error) {
+      console.error('GoogleMap: 地圖初始化失敗:', error);
+    }
 
   }, [initialCenter, initialZoom, showLocationSearch, onLocationSelect]);
 
