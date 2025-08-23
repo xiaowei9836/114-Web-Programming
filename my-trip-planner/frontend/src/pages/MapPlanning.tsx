@@ -314,28 +314,6 @@ const MapPlanning: React.FC = () => {
     }
   };
 
-  // 查看已保存的行程
-  const handleViewSavedTrips = () => {
-    try {
-      const savedTrips = JSON.parse(localStorage.getItem('savedTrips') || '[]');
-      
-      if (savedTrips.length === 0) {
-        alert('目前沒有保存的行程');
-        return;
-      }
-      
-      // 顯示已保存的行程列表
-      const tripList = savedTrips.map((trip: any, index: number) => 
-        `${index + 1}. ${trip.title} (${trip.totalPoints} 個地點)`
-      ).join('\n');
-      
-      alert(`已保存的行程：\n\n${tripList}`);
-    } catch (error) {
-      console.error('MapPlanning: 讀取已保存行程失敗:', error);
-      alert('讀取已保存行程失敗');
-    }
-  };
-
   // 清理超時
   useEffect(() => {
     return () => {
@@ -352,7 +330,7 @@ const MapPlanning: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
+        <div className="mb-4">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">地圖行程規劃</h1>
           <p className="text-gray-600">在地圖上規劃您的旅行地點，創建完美的行程安排</p>
         </div>
@@ -678,12 +656,6 @@ const MapPlanning: React.FC = () => {
                       className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
                     >
                       保存行程
-                    </button>
-                    <button
-                      onClick={handleViewSavedTrips}
-                      className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-                    >
-                      查看已保存行程
                     </button>
                     <button
                       onClick={handleClearAll}
