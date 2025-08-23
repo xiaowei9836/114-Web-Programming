@@ -294,12 +294,7 @@ const MapPlanning: React.FC = () => {
     return summary;
   };
 
-  // 清理超時
-  const clearSearchTimeout = () => {
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-  };
+
 
   // 在頁面載入時恢復保存的行程數據
   useEffect(() => {

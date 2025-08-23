@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, DollarSign, Save, ArrowLeft } from 'lucide-react';
+import { MapPin, Calendar, DollarSign, Save } from 'lucide-react';
 
 interface TripForm {
   title: string;
@@ -24,7 +24,7 @@ const CreateTrip: React.FC = () => {
     endDate: '',
     budget: {
       total: 0,
-      currency: 'USD'
+      currency: 'NTD'
     }
   });
   const [loading, setLoading] = useState(false);
@@ -74,8 +74,8 @@ const CreateTrip: React.FC = () => {
         throw new Error('創建旅行失敗');
       }
     } catch (error) {
-              console.error('創建旅行失敗:', error);
-        alert('創建旅行失敗，請重試');
+      console.error('創建旅行失敗:', error);
+      alert('創建旅行失敗，請重試');
     } finally {
       setLoading(false);
     }
@@ -87,16 +87,6 @@ const CreateTrip: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="mb-6">
-        <button
-          onClick={() => navigate(-1)}
-          className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>返回</span>
-        </button>
-      </div>
-
       <div className="card">
         <h1 className="text-3xl font-bold text-gray-900 mb-6">創建新旅行</h1>
         
@@ -236,9 +226,9 @@ const CreateTrip: React.FC = () => {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
+                  <option value="NTD">NTD (NT$)</option>
                   <option value="USD">USD ($)</option>
                   <option value="EUR">EUR (€)</option>
-                  <option value="CNY">CNY (¥)</option>
                   <option value="JPY">JPY (¥)</option>
                   <option value="GBP">GBP (£)</option>
                 </select>
