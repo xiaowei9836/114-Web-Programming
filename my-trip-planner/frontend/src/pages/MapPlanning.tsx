@@ -130,22 +130,26 @@ const MapPlanning: React.FC = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">添加新地點</h3>
               <div className="space-y-4">
                 <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                      地點名稱
-                    </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    地點名稱
+                  </label>
                   <input
                     type="text"
-                    value={selectedLocation.name}
+                    id="location-name"
+                    name="location-name"
+                    value={selectedLocation?.name || ''}
                     readOnly
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
                   />
                 </div>
 
                 <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                      地點類型
-                    </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    地點類型
+                  </label>
                   <select
+                    id="location-type"
+                    name="location-type"
                     value={newPoint.type}
                     onChange={(e) => setNewPoint(prev => ({ ...prev, type: e.target.value as any }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -159,10 +163,12 @@ const MapPlanning: React.FC = () => {
                 </div>
 
                 <div>
-                                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                      備註
-                    </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    備註
+                  </label>
                   <textarea
+                    id="location-notes"
+                    name="location-notes"
                     value={newPoint.notes || ''}
                     onChange={(e) => setNewPoint(prev => ({ ...prev, notes: e.target.value }))}
                     rows={3}
@@ -178,6 +184,8 @@ const MapPlanning: React.FC = () => {
                     </label>
                     <input
                       type="number"
+                      id="estimated-cost"
+                      name="estimated-cost"
                       value={newPoint.estimatedCost || ''}
                       onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedCost: Number(e.target.value) }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -190,6 +198,8 @@ const MapPlanning: React.FC = () => {
                     </label>
                     <input
                       type="number"
+                      id="estimated-time"
+                      name="estimated-time"
                       value={newPoint.estimatedTime || ''}
                       onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedTime: Number(e.target.value) }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
