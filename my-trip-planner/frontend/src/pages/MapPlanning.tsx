@@ -74,11 +74,31 @@ const MapPlanning: React.FC = () => {
     setTripPoints(items);
   };
 
+  // 簡單的拖曳測試（不使用 react-beautiful-dnd）
+  const testSimpleDrag = () => {
+    console.log('MapPlanning: 測試簡單拖曳功能');
+    if (tripPoints.length >= 2) {
+      const newOrder = [...tripPoints];
+      const temp = newOrder[0];
+      newOrder[0] = newOrder[1];
+      newOrder[1] = temp;
+      
+      console.log('MapPlanning: 手動交換前兩個地點');
+      setTripPoints(newOrder);
+    } else {
+      console.log('MapPlanning: 需要至少 2 個地點才能測試交換');
+    }
+  };
+
   // 測試拖曳功能是否正常工作
   const testDrag = () => {
     console.log('MapPlanning: 測試拖曳功能');
     console.log('MapPlanning: tripPoints 長度:', tripPoints.length);
+    console.log('MapPlanning: tripPoints IDs:', tripPoints.map(p => p.id));
     console.log('MapPlanning: 拖曳相關 props 是否正確綁定');
+    
+    // 檢查 react-beautiful-dnd 是否正常工作
+    console.log('MapPlanning: 檢查 react-beautiful-dnd 狀態');
   };
 
   // 搜尋地點
@@ -148,13 +168,14 @@ const MapPlanning: React.FC = () => {
     if (!selectedLocation) return;
 
     const newTripPoint: TripPoint = {
-      id: Date.now().toString(),
+      id: `point-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       location: selectedLocation,
       estimatedCost: newPoint.estimatedCost ? parseFloat(newPoint.estimatedCost) : undefined,
       estimatedTime: newPoint.estimatedTime ? parseFloat(newPoint.estimatedTime) : undefined,
       notes: newPoint.notes || undefined
     };
 
+    console.log('MapPlanning: 添加新地點，ID:', newTripPoint.id);
     setTripPoints(prev => [...prev, newTripPoint]);
     setSelectedLocation(null);
     setShowAddForm(false);
@@ -316,6 +337,13 @@ const MapPlanning: React.FC = () => {
                     title="測試拖曳功能"
                   >
                     測試拖曳
+                  </button>
+                  <button
+                    onClick={testSimpleDrag}
+                    className="text-green-600 hover:text-green-700 text-sm font-medium px-2 py-1 border border-green-300 rounded"
+                    title="測試簡單拖曳"
+                  >
+                    簡單拖曳
                   </button>
                   {tripPoints.length > 0 && (
                     <button
