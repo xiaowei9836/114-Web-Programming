@@ -64,6 +64,19 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
       return;
     }
 
+    // 檢查標記是否已經存在
+    const existingMarker = externalMarkersRef.current.find(marker => {
+      const pos = marker.getPosition();
+      if (!pos) return false;
+      return Math.abs(pos.lat() - location.lat) < 0.0001 && 
+             Math.abs(pos.lng() - location.lng) < 0.0001;
+    });
+
+    if (existingMarker) {
+      console.log('GoogleMap: 標記已存在，跳過創建:', location);
+      return;
+    }
+
     console.log('GoogleMap: 創建新的外部標記');
     const marker = new google.maps.Marker({
       map: mapInstanceRef.current,
@@ -99,16 +112,20 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
     externalMarkersRef.current.push(marker);
   }, []);
 
-  // 清除外部標記的函數
+  // 清除所有外部標記的函數
   const clearExternalMarkers = useCallback(() => {
-    externalMarkersRef.current.forEach(marker => {
-      marker.setMap(null);
-    });
-    externalMarkersRef.current = [];
+    console.log('GoogleMap: clearExternalMarkers 被調用');
+    if (externalMarkersRef.current.length > 0) {
+      externalMarkersRef.current.forEach(marker => {
+        marker.setMap(null);
+      });
+      externalMarkersRef.current = [];
+      console.log('GoogleMap: 所有外部標記已清除');
+    }
   }, []);
 
   // 添加臨時標記的函數（點擊地圖時顯示）
-  const addTempMarker = useCallback((location: Location) => {
+  const addTempMarker = useCallback((location: google.maps.LatLng) => {
     console.log('GoogleMap: addTempMarker 被調用，位置:', location);
     if (!mapInstanceRef.current) {
       console.error('GoogleMap: mapInstanceRef.current 為空，無法添加臨時標記');
@@ -124,8 +141,8 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
     console.log('GoogleMap: 創建新的臨時標記');
     const marker = new google.maps.Marker({
       map: mapInstanceRef.current,
-      position: { lat: location.lat, lng: location.lng },
-      title: location.name,
+      position: { lat: location.lat(), lng: location.lng() },
+      title: '點擊的地點',
       animation: google.maps.Animation.DROP,
       // 使用藍色臨時標記，區分於已添加的紅色標記
       icon: {
@@ -145,7 +162,11 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
     // 觸發地點選擇回調，讓父組件知道用戶選擇了這個位置
     if (stableOnLocationSelect) {
       console.log('GoogleMap: 觸發 onLocationSelect 回調');
-      stableOnLocationSelect(location);
+      stableOnLocationSelect({
+        lat: location.lat(),
+        lng: location.lng(),
+        name: '點擊的地點'
+      });
     }
   }, [stableOnLocationSelect]);
 
@@ -257,16 +278,11 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
         }
       };
 
-      // 地圖點擊事件
+      // 添加地圖點擊事件監聽器
       newMap.addListener('click', (event: google.maps.MapMouseEvent) => {
         if (event.latLng) {
-          const location: Location = {
-            lat: event.latLng.lat(),
-            lng: event.latLng.lng(),
-            name: '點擊的地點'
-          };
-          console.log('GoogleMap: 地圖點擊，位置:', location);
-          addTempMarker(location); // 點擊地圖時添加臨時標記
+          console.log('GoogleMap: 地圖被點擊，位置:', event.latLng);
+          addTempMarker(event.latLng);
         }
       });
 
@@ -303,6 +319,27 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
     if (!mapInstanceRef.current || !isMapReady) {
       console.log('GoogleMap: 地圖未準備好，跳過外部標記處理');
       return;
+    }
+
+    // 檢查標記是否已經存在，避免重複創建
+    const currentMarkerCount = externalMarkersRef.current.length;
+    const newMarkerCount = externalMarkers.length;
+    
+    if (currentMarkerCount === newMarkerCount && newMarkerCount > 0) {
+      // 檢查標記位置是否相同，如果相同則跳過
+      const positionsMatch = externalMarkers.every((location, index) => {
+        const existingMarker = externalMarkersRef.current[index];
+        if (!existingMarker) return false;
+        const existingPos = existingMarker.getPosition();
+        return existingPos && 
+               Math.abs(existingPos.lat() - location.lat) < 0.0001 && 
+               Math.abs(existingPos.lng() - location.lng) < 0.0001;
+      });
+      
+      if (positionsMatch) {
+        console.log('GoogleMap: 標記位置未變化，跳過重新創建');
+        return;
+      }
     }
 
     console.log('GoogleMap: 開始處理外部標記');
