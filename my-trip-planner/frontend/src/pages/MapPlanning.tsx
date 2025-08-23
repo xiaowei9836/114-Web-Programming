@@ -644,51 +644,59 @@ const MapPlanning: React.FC = () => {
                 ref={mapRef}
               />
             </div>
+
+            {/* 行程摘要區塊 - 移動到地圖視圖下方 */}
+            {tripPoints.length > 0 && (
+              <div className="mt-6 bg-white rounded-lg shadow-md p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">行程摘要</h3>
+                    <p className="text-gray-600">
+                      已規劃 {tripPoints.length} 個地點
+                      {tripPoints.some(p => p.estimatedCost) && (
+                        <span className="ml-2">
+                          • 總預估費用：$
+                          {tripPoints
+                            .filter(p => p.estimatedCost)
+                            .reduce((sum, p) => sum + (p.estimatedCost || 0), 0)
+                            .toFixed(0)} NTD
+                        </span>
+                      )}
+                      {tripPoints.some(p => p.estimatedTime) && (
+                        <span className="ml-2">
+                          • 總預估時間：
+                          {tripPoints
+                            .filter(p => p.estimatedTime)
+                            .reduce((sum, p) => sum + (p.estimatedTime || 0), 0)} 分鐘
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={handleSaveTrip}
+                      className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      保存行程
+                    </button>
+                    <button
+                      onClick={handleViewSavedTrips}
+                      className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                    >
+                      查看已保存行程
+                    </button>
+                    <button
+                      onClick={handleClearAll}
+                      className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                    >
+                      清除全部
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-
-        {/* 底部操作按鈕 */}
-        {tripPoints.length > 0 && (
-          <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">行程摘要</h3>
-                <p className="text-gray-600">
-                  已規劃 {tripPoints.length} 個地點
-                  {tripPoints.some(p => p.estimatedCost) && (
-                    <span className="ml-2">
-                      • 總預估費用：$
-                      {tripPoints
-                        .filter(p => p.estimatedCost)
-                        .reduce((sum, p) => sum + (p.estimatedCost || 0), 0)
-                        .toFixed(0)} NTD
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleSaveTrip}
-                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  保存行程
-                </button>
-                <button
-                  onClick={handleViewSavedTrips}
-                  className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-                >
-                  查看已保存行程
-                </button>
-                <button
-                  onClick={handleClearAll}
-                  className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  清除全部
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
