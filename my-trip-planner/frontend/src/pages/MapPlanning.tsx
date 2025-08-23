@@ -222,7 +222,73 @@ const MapPlanning: React.FC = () => {
               </div>
             </div>
 
-            {/* 已添加的地點列表 */}
+            {/* 添加地點表單 */}
+            {showAddForm && selectedLocation && (
+              <div className="bg-white rounded-lg shadow-md p-6 border-2 border-blue-200">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  添加地點：{selectedLocation.name}
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      預估費用 (NTD)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={newPoint.estimatedCost}
+                      onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedCost: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      預估時間 (分鐘)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="30"
+                      step="5"
+                      value={newPoint.estimatedTime}
+                      onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedTime: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      備註
+                    </label>
+                    <textarea
+                      placeholder="添加地點相關的備註..."
+                      value={newPoint.notes}
+                      onChange={(e) => setNewPoint(prev => ({ ...prev, notes: e.target.value }))}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={handleAddPoint}
+                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                    >
+                      添加地點
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAddForm(false);
+                        setSelectedLocation(null);
+                        setNewPoint({ estimatedCost: '', estimatedTime: '', notes: '' });
+                      }}
+                      className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 行程地點列表 */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-gray-900">行程地點</h2>
@@ -278,9 +344,9 @@ const MapPlanning: React.FC = () => {
                                       {point.estimatedCost && (
                                         <span>💰 ${point.estimatedCost} NTD</span>
                                       )}
-                                      {point.estimatedTime && (
-                                        <span>⏰ {point.estimatedTime} 分鐘</span>
-                                      )}
+                                                                              {point.estimatedTime && (
+                                          <span>⏰ {point.estimatedTime} 分鐘</span>
+                                        )}
                                     </div>
                                     {point.notes && (
                                       <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
@@ -305,72 +371,6 @@ const MapPlanning: React.FC = () => {
                 </DragDropContext>
               )}
             </div>
-
-            {/* 添加地點表單 */}
-            {showAddForm && selectedLocation && (
-              <div className="bg-white rounded-lg shadow-md p-6 border-2 border-blue-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                  添加地點：{selectedLocation.name}
-                </h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      預估費用 (NTD)
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={newPoint.estimatedCost}
-                      onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedCost: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      預估時間 (分鐘)
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="30"
-                      step="5"
-                      value={newPoint.estimatedTime}
-                      onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedTime: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 border-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      備註
-                    </label>
-                    <textarea
-                      placeholder="添加地點相關的備註..."
-                      value={newPoint.notes}
-                      onChange={(e) => setNewPoint(prev => ({ ...prev, notes: e.target.value }))}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  </div>
-                  <div className="flex space-x-3">
-                    <button
-                      onClick={handleAddPoint}
-                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-                    >
-                      添加地點
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowAddForm(false);
-                        setSelectedLocation(null);
-                        setNewPoint({ estimatedCost: '', estimatedTime: '', notes: '' });
-                      }}
-                      className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
-                    >
-                      取消
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* 右側地圖區域 */}
