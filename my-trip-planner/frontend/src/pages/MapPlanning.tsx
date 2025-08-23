@@ -588,12 +588,12 @@ const MapPlanning: React.FC = () => {
 
           {/* 右側地圖區域 */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-md py-6 px-0">
+            <div className="bg-white rounded-lg shadow-md py-5 px-0.5">
               <h2 className="text-xl font-semibold text-gray-900 mb-4 px-6">地圖視圖</h2>
               <GoogleMap
                 onLocationSelect={handleLocationSelect}
                 showLocationSearch={false}
-                className="h-96 rounded-lg border border-gray-200"
+                className="h-[500px] rounded-lg border border-gray-200"
                 externalMarkers={externalMarkers}
                 onMarkerClick={(location) => {
                   console.log('點擊地圖標記:', location);
