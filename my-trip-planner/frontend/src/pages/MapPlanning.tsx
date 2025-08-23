@@ -302,11 +302,7 @@ const MapPlanning: React.FC = () => {
                     <>
                       <button
                         onClick={() => setShowOrderEdit(!showOrderEdit)}
-                        className={`px-3 py-1 text-sm font-medium rounded border transition-colors ${
-                          showOrderEdit
-                            ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
-                            : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                        }`}
+                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                         title={showOrderEdit ? '關閉順序編輯' : '開啟順序編輯'}
                       >
                         {showOrderEdit ? '關閉編輯' : '修改順序'}
@@ -359,7 +355,7 @@ const MapPlanning: React.FC = () => {
                               <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
                             )}
                           </div>
-                          <div className="flex flex-col items-end space-y-1 ml-2">
+                          <div className="flex flex-col items-center space-y-1 ml-2">
                             {/* 直接修改順序輸入框 - 根據showOrderEdit狀態顯示/隱藏 */}
                             {showOrderEdit && (
                               <div className="flex items-center space-x-1 mb-2">
@@ -396,7 +392,7 @@ const MapPlanning: React.FC = () => {
                                 handleRemovePoint(point.id);
                               }}
                               onMouseDown={(e) => e.stopPropagation()}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded w-8 h-8 flex items-center justify-center"
                               title="移除地點"
                             >
                               ✕
@@ -415,7 +411,7 @@ const MapPlanning: React.FC = () => {
                                 }
                               }}
                               disabled={index === 0}
-                              className={`p-1 rounded ${
+                              className={`p-1 rounded w-8 h-8 flex items-center justify-center ${
                                 index === 0 
                                   ? 'text-gray-300 cursor-not-allowed' 
                                   : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
@@ -438,7 +434,7 @@ const MapPlanning: React.FC = () => {
                                 }
                               }}
                               disabled={index === tripPoints.length - 1}
-                              className={`p-1 rounded ${
+                              className={`p-1 rounded w-8 h-8 flex items-center justify-center ${
                                 index === tripPoints.length - 1 
                                   ? 'text-gray-300 cursor-not-allowed' 
                                   : 'text-green-600 hover:text-green-700 hover:bg-green-50'
