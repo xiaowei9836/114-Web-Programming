@@ -59,13 +59,31 @@ const MapPlanning: React.FC = () => {
 
   // 處理拖曳排序
   const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
+    console.log('MapPlanning: 拖曳結束，結果:', result);
+    
+    if (!result.destination) {
+      console.log('MapPlanning: 沒有目標位置，拖曳取消');
+      return;
+    }
 
+    console.log('MapPlanning: 從位置', result.source.index, '拖曳到位置', result.destination.index);
+    
     const items = Array.from(tripPoints);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
+    console.log('MapPlanning: 重新排序後的地點:', items);
     setTripPoints(items);
+  };
+
+  // 處理拖曳開始
+  const handleDragStart = (result: any) => {
+    console.log('MapPlanning: 拖曳開始，拖曳項目:', result);
+  };
+
+  // 處理拖曳進行中
+  const handleDragUpdate = (result: any) => {
+    console.log('MapPlanning: 拖曳更新:', result);
   };
 
   // 搜尋地點
@@ -313,7 +331,7 @@ const MapPlanning: React.FC = () => {
                   <p className="text-sm">搜尋地點或點擊地圖來開始規劃</p>
                 </div>
               ) : (
-                <DragDropContext onDragEnd={handleDragEnd}>
+                <DragDropContext onDragEnd={handleDragEnd} onDragStart={handleDragStart} onDragUpdate={handleDragUpdate}>
                   <Droppable droppableId="trip-points">
                     {(provided) => (
                       <div
@@ -328,9 +346,10 @@ const MapPlanning: React.FC = () => {
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className={`border border-gray-200 rounded-lg p-4 bg-gray-50 ${
-                                  snapshot.isDragging ? 'shadow-lg transform rotate-2' : ''
+                                className={`border border-gray-200 rounded-lg p-4 bg-gray-50 cursor-grab active:cursor-grabbing ${
+                                  snapshot.isDragging ? 'shadow-lg transform rotate-2 bg-blue-50 border-blue-300' : ''
                                 }`}
+                                style={provided.draggableProps.style}
                               >
                                 <div className="flex items-start justify-between">
                                   <div className="flex-1">
@@ -348,9 +367,9 @@ const MapPlanning: React.FC = () => {
                                       {point.estimatedCost && (
                                         <span>💰 ${point.estimatedCost} NTD</span>
                                       )}
-                                                                              {point.estimatedTime && (
-                                          <span>⏰ {point.estimatedTime} 分鐘</span>
-                                        )}
+                                      {point.estimatedTime && (
+                                        <span>⏰ {point.estimatedTime} 分鐘</span>
+                                      )}
                                     </div>
                                     {point.notes && (
                                       <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
@@ -363,6 +382,10 @@ const MapPlanning: React.FC = () => {
                                   >
                                     ✕
                                   </button>
+                                </div>
+                                {/* 拖曳提示 */}
+                                <div className="mt-2 text-xs text-gray-400 text-center">
+                                  拖曳此卡片來重新排序
                                 </div>
                               </div>
                             )}
