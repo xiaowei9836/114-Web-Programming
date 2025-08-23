@@ -83,6 +83,19 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
     });
 
     console.log('GoogleMap: 外部標記創建成功，設置到地圖');
+    console.log('GoogleMap: 標記位置:', marker.getPosition());
+    console.log('GoogleMap: 標記地圖:', marker.getMap());
+    
+    // 確保標記被添加到地圖
+    marker.setMap(mapInstanceRef.current);
+    
+    // 驗證標記是否真的在地圖上
+    setTimeout(() => {
+      console.log('GoogleMap: 標記驗證 - 位置:', marker.getPosition());
+      console.log('GoogleMap: 標記驗證 - 地圖:', marker.getMap());
+      console.log('GoogleMap: 標記驗證 - 可見性:', marker.getVisible());
+    }, 100);
+    
     externalMarkersRef.current.push(marker);
   }, []);
 
@@ -164,17 +177,29 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
         streetViewControl: true,
         fullscreenControl: true,
         zoomControl: true,
-        styles: [
-          {
-            featureType: 'poi',
-            elementType: 'labels',
-            stylers: [{ visibility: 'off' }]
-          }
-        ]
+        // 暫時移除樣式，確保標記能正常顯示
+        // styles: [
+        //   {
+        //     featureType: 'poi',
+        //     elementType: 'labels',
+        //     stylers: [{ visibility: 'off' }]
+        //   }
+        // ]
       });
 
       console.log('GoogleMap: 地圖創建成功');
       mapInstanceRef.current = newMap;
+
+      // 添加地圖事件監聽器來檢查狀態
+      newMap.addListener('idle', () => {
+        console.log('GoogleMap: 地圖渲染完成');
+        console.log('GoogleMap: 地圖中心:', newMap.getCenter());
+        console.log('GoogleMap: 地圖縮放:', newMap.getZoom());
+      });
+
+      newMap.addListener('bounds_changed', () => {
+        console.log('GoogleMap: 地圖邊界變化');
+      });
 
       // 創建路線渲染器
       const newDirectionsRenderer = new google.maps.DirectionsRenderer({
@@ -285,10 +310,24 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
     clearExternalMarkers();
 
     // 添加新的外部標記
-    externalMarkers.forEach((location, index) => {
-      console.log(`GoogleMap: 添加外部標記 ${index + 1}:`, location);
-      addExternalMarker(location);
-    });
+    if (externalMarkers.length > 0) {
+      externalMarkers.forEach((location, index) => {
+        console.log(`GoogleMap: 添加外部標記 ${index + 1}:`, location);
+        addExternalMarker(location);
+      });
+
+      // 調整地圖視圖以顯示所有標記
+      const bounds = new google.maps.LatLngBounds();
+      externalMarkers.forEach(location => {
+        bounds.extend(new google.maps.LatLng(location.lat, location.lng));
+      });
+      
+      // 添加一些邊距
+      mapInstanceRef.current.fitBounds(bounds);
+      mapInstanceRef.current.setZoom(Math.min(mapInstanceRef.current.getZoom() || 12, 15));
+      
+      console.log('GoogleMap: 地圖視圖已調整以顯示所有標記');
+    }
 
     console.log('GoogleMap: 外部標記已更新，共', externalMarkers.length, '個標記');
   }, [externalMarkers, isMapReady, addExternalMarker, clearExternalMarkers]);
