@@ -722,7 +722,7 @@ const MapPlanning: React.FC = () => {
                     <div key={trip.id} className="bg-white rounded-lg p-4 border border-blue-200">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-blue-900">
-                          行程{index + 1} 保存於：{new Date(trip.createdAt).toLocaleString('zh-TW')}
+                          行程 {index + 1} 保存於：{new Date(trip.createdAt).toLocaleString('zh-TW')}
                         </h4>
                         <button
                           onClick={() => {
@@ -746,7 +746,7 @@ const MapPlanning: React.FC = () => {
                         {trip.points.map((point, pointIndex) => (
                           <span key={pointIndex}>
                             {point.name}
-                            {pointIndex < trip.points.length - 1 && ' -> '}
+                            {pointIndex < trip.points.length - 1 && ' → '}
                           </span>
                         ))}
                       </div>
