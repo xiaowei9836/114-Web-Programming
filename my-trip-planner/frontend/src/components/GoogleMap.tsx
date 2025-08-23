@@ -83,21 +83,25 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
       position: { lat: location.lat, lng: location.lng },
       title: location.name,
       animation: google.maps.Animation.DROP,
-      // 使用自定義圖標，紅色大頭針
+      // 使用標準 Google Maps 圖標，紅色大頭針
       icon: {
-        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C8.13 2 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#FF4444"/>
-          </svg>
-        `),
-        scaledSize: new google.maps.Size(24, 24),
-        anchor: new google.maps.Point(12, 24)
+        url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
+        scaledSize: new google.maps.Size(32, 32),
+        anchor: new google.maps.Point(16, 32)
       }
+    });
+
+    // 如果圖標加載失敗，使用默認圖標
+    marker.addListener('error', () => {
+      console.warn('GoogleMap: 自定義圖標加載失敗，使用默認圖標');
+      marker.setIcon(null); // 使用默認圖標
     });
 
     console.log('GoogleMap: 外部標記創建成功，設置到地圖');
     console.log('GoogleMap: 標記位置:', marker.getPosition());
     console.log('GoogleMap: 標記地圖:', marker.getMap());
+    console.log('GoogleMap: 標記圖標:', marker.getIcon());
+    console.log('GoogleMap: 標記可見性:', marker.getVisible());
     
     // 確保標記被添加到地圖
     marker.setMap(mapInstanceRef.current);
@@ -107,6 +111,8 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
       console.log('GoogleMap: 標記驗證 - 位置:', marker.getPosition());
       console.log('GoogleMap: 標記驗證 - 地圖:', marker.getMap());
       console.log('GoogleMap: 標記驗證 - 可見性:', marker.getVisible());
+      console.log('GoogleMap: 標記驗證 - 圖標:', marker.getIcon());
+      console.log('GoogleMap: 標記驗證 - 動畫:', marker.getAnimation());
     }, 100);
     
     externalMarkersRef.current.push(marker);
@@ -144,15 +150,11 @@ const GoogleMap = forwardRef<GoogleMapRef, GoogleMapProps>(({
       position: { lat: location.lat(), lng: location.lng() },
       title: '點擊的地點',
       animation: google.maps.Animation.DROP,
-      // 使用藍色臨時標記，區分於已添加的紅色標記
+      // 使用標準 Google Maps 圖標，藍色臨時標記
       icon: {
-        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C8.13 2 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#3B82F6"/>
-          </svg>
-        `),
-        scaledSize: new google.maps.Size(24, 24),
-        anchor: new google.maps.Point(12, 24)
+        url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+        scaledSize: new google.maps.Size(32, 32),
+        anchor: new google.maps.Point(16, 32)
       }
     });
 
