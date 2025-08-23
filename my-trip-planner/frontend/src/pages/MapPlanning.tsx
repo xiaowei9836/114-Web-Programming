@@ -71,12 +71,44 @@ const MapPlanning: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* 地圖視圖 */}
           <div className="lg:col-span-2">
+            {/* 搜尋欄位 - 完全分離在地圖外面 */}
+            <div className="bg-white rounded-lg shadow-lg p-4 mb-4 border border-gray-200">
+              <form onSubmit={(e) => { e.preventDefault(); }} className="space-y-3">
+                <div>
+                  <label htmlFor="location-search" className="block text-sm font-medium text-gray-700 mb-1">
+                    搜尋地點
+                  </label>
+                  <input
+                    id="location-search"
+                    type="text"
+                    placeholder="輸入地點名稱或地址..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  />
+                </div>
+                
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    className="flex-1 px-3 py-2 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700 transition-colors"
+                  >
+                    清除標記
+                  </button>
+                  <button
+                    type="button"
+                    className="flex-1 px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
+                  >
+                    清除路線
+                  </button>
+                </div>
+              </form>
+            </div>
+
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">地圖視圖</h2>
               <GoogleMap
                 onLocationSelect={handleLocationSelect}
-                showLocationSearch={true}
-                className="min-h-[600px]"
+                showLocationSearch={false}
+                className="h-96 rounded-lg border border-gray-200"
               />
             </div>
           </div>

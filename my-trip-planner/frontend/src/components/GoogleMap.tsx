@@ -17,18 +17,15 @@ interface GoogleMapProps {
 
 const GoogleMap: React.FC<GoogleMapProps> = ({
   onLocationSelect,
-  showLocationSearch = true,
+  showLocationSearch = false,
   initialCenter = { lat: 25.0330, lng: 121.5654 }, // 台北市中心
   initialZoom = 12,
   className = ''
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [mapMarkers, setMapMarkers] = useState<google.maps.Marker[]>([]);
   const [directionsRenderer, setDirectionsRenderer] = useState<google.maps.DirectionsRenderer | null>(null);
-  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
 
   useEffect(() => {
     if (!mapRef.current || !window.google) return;
@@ -77,46 +74,6 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     });
 
   }, [initialCenter, initialZoom]);
-
-  // 初始化 Autocomplete
-  useEffect(() => {
-    if (!map || !searchInputRef.current) return;
-
-    const newAutocomplete = new google.maps.places.Autocomplete(searchInputRef.current, {
-      types: ['establishment', 'geocode'],
-      componentRestrictions: { country: 'tw' }
-    });
-
-    newAutocomplete.bindTo('bounds', map);
-    setAutocomplete(newAutocomplete);
-
-    // 監聽地點選擇
-    newAutocomplete.addListener('place_changed', () => {
-      const place = newAutocomplete.getPlace();
-      if (place.geometry && place.geometry.location) {
-        const location: Location = {
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
-          name: place.name || '未知地點',
-          address: place.formatted_address
-        };
-
-        // 移動地圖到選中地點
-        map.setCenter(place.geometry.location);
-        map.setZoom(16);
-
-        // 添加標記
-        addMarker(location);
-        setSelectedLocation(location);
-
-        // 觸發地點選擇回調
-        if (onLocationSelect) {
-          onLocationSelect(location);
-        }
-      }
-    });
-
-  }, [map, onLocationSelect]);
 
   const addMarker = (location: Location) => {
     if (!map) return;
@@ -175,7 +132,6 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       marker.setMap(null);
     });
     setMapMarkers([]);
-    setSelectedLocation(null);
   };
 
   const clearRoute = () => {
@@ -202,90 +158,34 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     }
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  };
-
   return (
-    <div className={`space-y-4 ${className}`}>
-      {/* 搜尋欄位 - 完全分離在地圖外面 */}
-      {showLocationSearch && (
-        <div className="bg-white rounded-lg shadow-lg p-4 min-w-[320px] border border-gray-200">
-          <form onSubmit={handleSearchSubmit} className="space-y-3">
-            <div>
-              <label htmlFor="location-search" className="block text-sm font-medium text-gray-700 mb-1">
-                搜尋地點
-              </label>
-              <input
-                ref={searchInputRef}
-                id="location-search"
-                type="text"
-                placeholder="輸入地點名稱或地址..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
-              />
-            </div>
-            
-            {selectedLocation && (
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                <h4 className="text-sm font-medium text-blue-900 mb-1">已選擇地點</h4>
-                <p className="text-sm text-blue-800">{selectedLocation.name}</p>
-                {selectedLocation.address && (
-                  <p className="text-xs text-blue-600 mt-1">{selectedLocation.address}</p>
-                )}
-              </div>
-            )}
-
-            <div className="flex space-x-2">
-              <button
-                type="button"
-                onClick={clearMarkers}
-                className="flex-1 px-3 py-2 bg-gray-600 text-white text-sm rounded-md hover:bg-gray-700 transition-colors"
-              >
-                清除標記
-              </button>
-              <button
-                type="button"
-                onClick={clearRoute}
-                className="flex-1 px-3 py-2 bg-red-600 text-white text-sm rounded-md hover:bg-red-700 transition-colors"
-              >
-                清除路線
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* 地圖容器 - 獨立的高度設置 */}
-      <div className="relative bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
-        <div ref={mapRef} className="w-full h-[500px]" />
-        
-        {/* 地圖控制按鈕 */}
-        <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-          <button
-            onClick={() => map?.setZoom((map.getZoom() || 12) + 1)}
-            className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-            title="放大"
-          >
-            ➕
-          </button>
-          <button
-            onClick={() => map?.setZoom((map.getZoom() || 12) - 1)}
-            className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-            title="縮小"
-          >
-            ➖
-          </button>
-          <button
-            onClick={() => map?.setCenter(initialCenter)}
-            className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-            title="回到中心"
-          >
-            🏠
-          </button>
-        </div>
+    <div className={`relative ${className}`}>
+      {/* 地圖容器 - 純淨的地圖顯示 */}
+      <div ref={mapRef} className="w-full h-full min-h-[500px] rounded-lg border border-gray-200" />
+      
+      {/* 地圖控制按鈕 */}
+      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
+        <button
+          onClick={() => map?.setZoom((map.getZoom() || 12) + 1)}
+          className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+          title="放大"
+        >
+          ➕
+        </button>
+        <button
+          onClick={() => map?.setZoom((map.getZoom() || 12) - 1)}
+          className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+          title="縮小"
+        >
+          ➖
+        </button>
+        <button
+          onClick={() => map?.setCenter(initialCenter)}
+          className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
+          title="回到中心"
+        >
+          🏠
+        </button>
       </div>
     </div>
   );
