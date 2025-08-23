@@ -1,9 +1,10 @@
 import express from 'express';
-import {
-  getAllTrips,
-  getTripById,
-  createTrip,
-  updateTrip,
+import Trip from '../models/Trip';
+import { 
+  getAllTrips, 
+  getTripById, 
+  createTrip, 
+  updateTrip, 
   deleteTrip,
   addItineraryActivity,
   addReminder,
@@ -11,6 +12,15 @@ import {
 } from '../controllers/tripController';
 
 const router = express.Router();
+
+// 健康檢查端點
+router.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    message: '後端服務運行正常'
+  });
+});
 
 // 基礎 CRUD 操作
 router.get('/', getAllTrips);
@@ -25,7 +35,7 @@ router.post('/itinerary', addItineraryActivity);
 // 提醒管理
 router.post('/reminders', addReminder);
 
-// 日記管理
+// 日誌管理
 router.post('/journal', addJournalEntry);
 
 export default router;

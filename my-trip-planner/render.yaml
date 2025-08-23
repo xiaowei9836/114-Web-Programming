@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: my-trip-planner-backend
+    env: node
+    plan: free
+    buildCommand: cd my-trip-planner/backend && npm install && npm run build
+    startCommand: cd my-trip-planner/backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+    healthCheckPath: /api/health
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - my-trip-planner/backend/**
