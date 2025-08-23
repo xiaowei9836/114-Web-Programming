@@ -211,9 +211,9 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
 
   return (
     <div className={`relative ${className}`}>
-      {/* 搜尋欄位 - 分離且不重疊 */}
+      {/* 搜尋欄位 - 放在地圖上方 */}
       {showLocationSearch && (
-        <div className="absolute top-4 left-4 z-20 bg-white rounded-lg shadow-lg p-4 min-w-[320px]">
+        <div className="mb-4 bg-white rounded-lg shadow-lg p-4 min-w-[320px]">
           <form onSubmit={handleSearchSubmit} className="space-y-3">
             <div>
               <label htmlFor="location-search" className="block text-sm font-medium text-gray-700 mb-1">
