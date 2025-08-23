@@ -1,6 +1,13 @@
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { DragDropContext, Droppable, Draggable, type DropResult } from 'react-beautiful-dnd';
 import GoogleMap, { type GoogleMapRef } from '../components/GoogleMap';
+
+// 穩定的 ID 生成器
+let idCounter = 0;
+const generateStableId = () => {
+  idCounter += 1;
+  return `point-${idCounter}-${Date.now()}`;
+};
 
 // 定義類型
 interface Location {
@@ -57,76 +64,21 @@ const MapPlanning: React.FC = () => {
     }
   }, []);
 
-  // 處理拖曳排序
+  // 清除所有地點
+  const handleClearAll = () => {
+    setTripPoints([]);
+    setSelectedLocation(null);
+  };
+
+  // 處理拖曳結束
   const handleDragEnd = (result: DropResult) => {
-    console.log('MapPlanning: 拖曳結束，結果:', result);
-    
-    if (!result.destination) {
-      console.log('MapPlanning: 沒有目標位置，拖曳取消');
-      return;
-    }
+    if (!result.destination) return;
 
     const items = Array.from(tripPoints);
     const [reorderedItem] = items.splice(result.source.index, 1);
     items.splice(result.destination.index, 0, reorderedItem);
 
-    console.log('MapPlanning: 重新排序完成，新順序:', items.map(item => item.location.name));
     setTripPoints(items);
-  };
-
-  // 簡單的拖曳測試（不使用 react-beautiful-dnd）
-  const testSimpleDrag = () => {
-    console.log('MapPlanning: 測試簡單拖曳功能');
-    if (tripPoints.length >= 2) {
-      const newOrder = [...tripPoints];
-      const temp = newOrder[0];
-      newOrder[0] = newOrder[1];
-      newOrder[1] = temp;
-      
-      console.log('MapPlanning: 手動交換前兩個地點');
-      setTripPoints(newOrder);
-    } else {
-      console.log('MapPlanning: 需要至少 2 個地點才能測試交換');
-    }
-  };
-
-  // 測試拖曳項目的穩定性
-  const testDragStability = () => {
-    console.log('MapPlanning: 測試拖曳項目穩定性');
-    console.log('MapPlanning: 檢查 tripPoints 數組的穩定性');
-    
-    // 檢查數組引用是否穩定
-    const currentPoints = tripPoints;
-    console.log('MapPlanning: 當前 tripPoints 引用:', currentPoints);
-    console.log('MapPlanning: 數組長度:', currentPoints.length);
-    
-    // 檢查每個項目的穩定性
-    currentPoints.forEach((point, index) => {
-      console.log(`MapPlanning: 項目 ${index}:`, {
-        id: point.id,
-        name: point.location.name,
-        idType: typeof point.id,
-        idLength: point.id.length
-      });
-    });
-  };
-
-  // 測試拖曳功能是否正常工作
-  const testDrag = () => {
-    console.log('MapPlanning: 測試拖曳功能');
-    console.log('MapPlanning: tripPoints 長度:', tripPoints.length);
-    console.log('MapPlanning: tripPoints IDs:', tripPoints.map(p => p.id));
-    console.log('MapPlanning: 拖曳相關 props 是否正確綁定');
-    
-    // 檢查 react-beautiful-dnd 是否正常工作
-    console.log('MapPlanning: 檢查 react-beautiful-dnd 狀態');
-    
-    // 檢查拖曳容器狀態
-    console.log('MapPlanning: 拖曳容器狀態檢查');
-    console.log('MapPlanning: 每個地點的拖曳狀態:');
-    tripPoints.forEach((point, index) => {
-      console.log(`  ${index + 1}. ID: ${point.id}, 名稱: ${point.location.name}`);
-    });
   };
 
   // 搜尋地點
@@ -196,7 +148,7 @@ const MapPlanning: React.FC = () => {
     if (!selectedLocation) return;
 
     const newTripPoint: TripPoint = {
-      id: `point-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      id: generateStableId(),
       location: selectedLocation,
       estimatedCost: newPoint.estimatedCost ? parseFloat(newPoint.estimatedCost) : undefined,
       estimatedTime: newPoint.estimatedTime ? parseFloat(newPoint.estimatedTime) : undefined,
@@ -213,12 +165,6 @@ const MapPlanning: React.FC = () => {
 
   const handleRemovePoint = (id: string) => {
     setTripPoints(prev => prev.filter(point => point.id !== id));
-  };
-
-  const handleClearAll = () => {
-    setTripPoints([]);
-    setSelectedLocation(null);
-    setShowAddForm(false);
   };
 
   // 清理超時
@@ -359,34 +305,30 @@ const MapPlanning: React.FC = () => {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-gray-900">行程地點</h2>
                 <div className="flex items-center space-x-2">
-                  <button
-                    onClick={testDrag}
-                    className="text-blue-600 hover:text-blue-700 text-sm font-medium px-2 py-1 border border-blue-300 rounded"
-                    title="測試拖曳功能"
-                  >
-                    🔍
-                  </button>
-                  <button
-                    onClick={testSimpleDrag}
-                    className="text-green-600 hover:text-green-700 text-sm font-medium px-2 py-1 border border-green-300 rounded"
-                    title="測試簡單拖曳"
-                  >
-                    🔄
-                  </button>
-                  <button
-                    onClick={testDragStability}
-                    className="text-purple-600 hover:text-purple-700 text-sm font-medium px-2 py-1 border border-purple-300 rounded"
-                    title="測試拖曳穩定性"
-                  >
-                    📊
-                  </button>
                   {tripPoints.length > 0 && (
-                    <button
-                      onClick={handleClearAll}
-                      className="text-red-600 hover:text-red-700 text-sm font-medium"
-                    >
-                      清除全部
-                    </button>
+                    <>
+                      <button
+                        onClick={handleClearAll}
+                        className="text-red-600 hover:text-red-700 text-sm font-medium"
+                      >
+                        清除全部
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (tripPoints.length >= 2) {
+                            const newOrder = [...tripPoints];
+                            const temp = newOrder[0];
+                            newOrder[0] = newOrder[1];
+                            newOrder[1] = temp;
+                            setTripPoints(newOrder);
+                          }
+                        }}
+                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        disabled={tripPoints.length < 2}
+                      >
+                        交換前兩個
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
@@ -398,44 +340,29 @@ const MapPlanning: React.FC = () => {
                   <p className="text-sm">搜尋地點或點擊地圖來開始規劃</p>
                 </div>
               ) : (
-                <DragDropContext 
-                  onDragEnd={handleDragEnd}
-                  onDragStart={(result) => console.log('MapPlanning: 拖曳開始:', result)}
-                  onDragUpdate={(result) => console.log('MapPlanning: 拖曳更新:', result)}
-                >
-                  <Droppable droppableId="trip-points" mode="standard">
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <Droppable droppableId="trip-points">
                     {(provided, snapshot) => (
                       <div
                         {...provided.droppableProps}
                         ref={provided.innerRef}
                         className={`space-y-3 ${snapshot.isDraggingOver ? 'bg-blue-50' : ''}`}
-                        style={{ 
-                          minHeight: '50px',
-                          position: 'relative'
-                        }}
                       >
                         {tripPoints.map((point, index) => (
                           <Draggable 
                             key={point.id} 
                             draggableId={point.id} 
                             index={index}
-                            isDragDisabled={false}
                           >
                             {(provided, snapshot) => (
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className={`border border-gray-200 rounded-lg p-4 bg-gray-50 cursor-move select-none ${
-                                  snapshot.isDragging ? 'shadow-lg transform rotate-2 bg-blue-100 z-50' : ''
+                                className={`border border-gray-200 rounded-lg p-4 bg-gray-50 cursor-move ${
+                                  snapshot.isDragging ? 'shadow-lg bg-blue-100' : ''
                                 }`}
-                                style={{
-                                  ...provided.draggableProps.style,
-                                  userSelect: 'none',
-                                  touchAction: 'none'
-                                }}
-                                onMouseDown={(e) => console.log('MapPlanning: 滑鼠按下:', e)}
-                                onTouchStart={(e) => console.log('MapPlanning: 觸摸開始:', e)}
+                                style={provided.draggableProps.style}
                               >
                                 <div className="flex items-start justify-between">
                                   <div className="flex-1">
