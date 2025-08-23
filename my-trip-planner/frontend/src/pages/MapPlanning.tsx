@@ -1,24 +1,8 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import {
-  useSortable,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import GoogleMap, { type GoogleMapRef } from '../components/GoogleMap';
 
+// 定義類型
 interface Location {
   lat: number;
   lng: number;
@@ -29,122 +13,38 @@ interface Location {
 interface TripPoint {
   id: string;
   location: Location;
-  estimatedCost: number;
-  estimatedTime: number;
-  notes: string;
+  estimatedCost?: number;
+  estimatedTime?: number;
+  notes?: string;
 }
-
-// 可拖曳的行程地點項目組件
-const SortableTripPoint = ({ point, index, onDelete, onEdit }: {
-  point: TripPoint;
-  index: number;
-  onDelete: (id: string) => void;
-  onEdit: (index: number) => void;
-}) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: point.id || index });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="bg-white border border-gray-200 rounded-lg p-3 mb-2 shadow-sm hover:shadow-md transition-shadow"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div
-            {...attributes}
-            {...listeners}
-            className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600"
-          >
-            ⋮⋮
-          </div>
-          <div className="flex-shrink-0 w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold">
-            {index + 1}
-          </div>
-          <div className="flex-1">
-            <h4 className="font-medium text-gray-900">{point.location.name}</h4>
-            <p className="text-sm text-gray-600">{point.location.address}</p>
-            <div className="flex space-x-4 mt-1 text-xs text-gray-500">
-              <span>💰 {point.estimatedCost} NTD</span>
-              <span>⏰ {point.estimatedTime} 分鐘</span>
-            </div>
-          </div>
-        </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => onEdit(index)}
-            className="text-blue-600 hover:text-blue-800 text-sm"
-          >
-            編輯
-          </button>
-          <button
-            onClick={() => onDelete(point.id)}
-            className="text-red-600 hover:text-red-800 text-sm"
-          >
-            刪除
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const MapPlanning: React.FC = () => {
   const [tripPoints, setTripPoints] = useState<TripPoint[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<google.maps.places.PlaceResult[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<{
+    lat: number;
+    lng: number;
+    name: string;
+    address?: string;
+  } | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newPoint, setNewPoint] = useState<{
-    estimatedCost: number;
-    estimatedTime: number;
-    notes: string;
-  }>({
-    estimatedCost: 0,
-    estimatedTime: 30,
+  const [newPoint, setNewPoint] = useState({
+    estimatedCost: '',
+    estimatedTime: '',
     notes: ''
   });
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef<number>();
   const mapRef = useRef<GoogleMapRef>(null);
 
-  // 拖曳排序相關
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
-
-    if (active.id !== over.id) {
-      const oldIndex = tripPoints.findIndex(point => (point.id || tripPoints.indexOf(point)) === active.id);
-      const newIndex = tripPoints.findIndex(point => (point.id || tripPoints.indexOf(point)) === over.id);
-      
-      const newTripPoints = arrayMove(tripPoints, oldIndex, newIndex);
-      setTripPoints(newTripPoints);
-      
-      console.log('MapPlanning: 行程地點順序已更新:', newTripPoints.map((p, i) => `${i + 1}. ${p.location.name}`));
-    }
-  };
-
   // 使用 useCallback 穩定 handleLocationSelect 函數
-  const handleLocationSelect = useCallback((location: Location) => {
+  const handleLocationSelect = useCallback((location: {
+    lat: number;
+    lng: number;
+    name: string;
+    address?: string;
+  }) => {
     console.log('MapPlanning: 收到地點選擇:', location);
     setSelectedLocation(location);
     setShowAddForm(true);
@@ -156,6 +56,17 @@ const MapPlanning: React.FC = () => {
       mapRef.current.clearTempMarker();
     }
   }, []);
+
+  // 處理拖曳排序
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) return;
+
+    const items = Array.from(tripPoints);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setTripPoints(items);
+  };
 
   // 搜尋地點
   const searchPlaces = async (query: string) => {
@@ -221,30 +132,21 @@ const MapPlanning: React.FC = () => {
   };
 
   const handleAddPoint = () => {
-    if (selectedLocation && newPoint.estimatedCost && newPoint.estimatedTime) {
-      const point: TripPoint = {
-        id: `point_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        location: selectedLocation,
-        estimatedCost: newPoint.estimatedCost,
-        estimatedTime: newPoint.estimatedTime,
-        notes: newPoint.notes || ''
-      };
-      
-      setTripPoints(prev => [...prev, point]);
-      setSelectedLocation(null);
-      setNewPoint({
-        estimatedCost: 0,
-        estimatedTime: 30,
-        notes: ''
-      });
-      
-      // 清除地圖上的臨時標記
-      if (mapRef.current) {
-        mapRef.current.clearTempMarker();
-      }
-      
-      console.log('MapPlanning: 添加新地點:', point);
-    }
+    if (!selectedLocation) return;
+
+    const newTripPoint: TripPoint = {
+      id: Date.now().toString(),
+      location: selectedLocation,
+      estimatedCost: newPoint.estimatedCost ? parseFloat(newPoint.estimatedCost) : undefined,
+      estimatedTime: newPoint.estimatedTime ? parseFloat(newPoint.estimatedTime) : undefined,
+      notes: newPoint.notes || undefined
+    };
+
+    setTripPoints(prev => [...prev, newTripPoint]);
+    setSelectedLocation(null);
+    setShowAddForm(false);
+    setNewPoint({ estimatedCost: '', estimatedTime: '', notes: '' });
+    clearTempMarker(); // 添加地點後清除臨時標記
   };
 
   const handleRemovePoint = (id: string) => {
@@ -341,29 +243,66 @@ const MapPlanning: React.FC = () => {
                   <p className="text-sm">搜尋地點或點擊地圖來開始規劃</p>
                 </div>
               ) : (
-                <DndContext
-                  sensors={sensors}
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <SortableContext
-                    items={tripPoints.map(point => point.id || tripPoints.indexOf(point))}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    {tripPoints.map((point, index) => (
-                      <SortableTripPoint
-                        key={point.id || index}
-                        point={point}
-                        index={index}
-                        onDelete={handleRemovePoint}
-                        onEdit={() => {
-                          // 編輯功能待實現
-                          console.log('編輯地點:', point);
-                        }}
-                      />
-                    ))}
-                  </SortableContext>
-                </DndContext>
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <Droppable droppableId="trip-points">
+                    {(provided) => (
+                      <div
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                        className="space-y-3"
+                      >
+                        {tripPoints.map((point, index) => (
+                          <Draggable key={point.id} draggableId={point.id} index={index}>
+                            {(provided, snapshot) => (
+                              <div
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                {...provided.dragHandleProps}
+                                className={`border border-gray-200 rounded-lg p-4 bg-gray-50 ${
+                                  snapshot.isDragging ? 'shadow-lg transform rotate-2' : ''
+                                }`}
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center mb-2">
+                                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full mr-2">
+                                        {index + 1}
+                                      </span>
+                                      <h3 className="font-medium text-gray-900">{point.location.name}</h3>
+                                      <span className="ml-2 text-red-500" title="地圖標記">📍</span>
+                                    </div>
+                                    {point.location.address && (
+                                      <p className="text-sm text-gray-600 mb-2">{point.location.address}</p>
+                                    )}
+                                    <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                      {point.estimatedCost && (
+                                        <span>💰 ${point.estimatedCost} NTD</span>
+                                      )}
+                                      {point.estimatedTime && (
+                                        <span>⏰ {point.estimatedTime} 分鐘</span>
+                                      )}
+                                    </div>
+                                    {point.notes && (
+                                      <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={() => handleRemovePoint(point.id)}
+                                    className="text-red-500 hover:text-red-700 ml-2"
+                                    title="移除地點"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </DragDropContext>
               )}
             </div>
 
@@ -382,7 +321,7 @@ const MapPlanning: React.FC = () => {
                       type="number"
                       placeholder="0"
                       value={newPoint.estimatedCost}
-                      onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedCost: Number(e.target.value) }))}
+                      onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedCost: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
@@ -395,7 +334,7 @@ const MapPlanning: React.FC = () => {
                       placeholder="30"
                       step="5"
                       value={newPoint.estimatedTime}
-                      onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedTime: Number(e.target.value) }))}
+                      onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedTime: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 border-blue-500"
                     />
                   </div>
@@ -422,7 +361,7 @@ const MapPlanning: React.FC = () => {
                       onClick={() => {
                         setShowAddForm(false);
                         setSelectedLocation(null);
-                        setNewPoint({ estimatedCost: 0, estimatedTime: 30, notes: '' });
+                        setNewPoint({ estimatedCost: '', estimatedTime: '', notes: '' });
                       }}
                       className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
                     >
