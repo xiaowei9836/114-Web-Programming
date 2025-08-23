@@ -359,10 +359,10 @@ const MapPlanning: React.FC = () => {
                               <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
                             )}
                           </div>
-                          <div className="flex items-center space-x-2 ml-2">
+                          <div className="flex flex-col items-end space-y-1 ml-2">
                             {/* 直接修改順序輸入框 - 根據showOrderEdit狀態顯示/隱藏 */}
                             {showOrderEdit && (
-                              <div className="flex items-center space-x-1">
+                              <div className="flex items-center space-x-1 mb-2">
                                 <span className="text-xs text-gray-500">去第</span>
                                 <input
                                   type="number"
@@ -388,6 +388,19 @@ const MapPlanning: React.FC = () => {
                                 <span className="text-xs text-gray-500">位</span>
                               </div>
                             )}
+                            
+                            {/* 移除按鈕 - 放在最上面 */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRemovePoint(point.id);
+                              }}
+                              onMouseDown={(e) => e.stopPropagation()}
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded"
+                              title="移除地點"
+                            >
+                              ✕
+                            </button>
                             
                             {/* 上移按鈕 */}
                             <button
@@ -433,19 +446,6 @@ const MapPlanning: React.FC = () => {
                               title={index === tripPoints.length - 1 ? '已是最後一個' : '下移一位'}
                             >
                               ⬇️
-                            </button>
-                            
-                            {/* 移除按鈕 */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemovePoint(point.id);
-                              }}
-                              onMouseDown={(e) => e.stopPropagation()}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded ml-1"
-                              title="移除地點"
-                            >
-                              ✕
                             </button>
                           </div>
                         </div>
