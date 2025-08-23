@@ -235,10 +235,10 @@ const MapPlanning: React.FC = () => {
                           )}
                           <div className="flex items-center space-x-4 text-sm text-gray-500">
                             {point.estimatedCost && (
-                              <span>💰 ${point.estimatedCost}</span>
+                              <span>💰 ${point.estimatedCost} NTD</span>
                             )}
                             {point.estimatedTime && (
-                              <span>⏰ {point.estimatedTime}小時</span>
+                              <span>⏰ {point.estimatedTime} 分鐘</span>
                             )}
                           </div>
                           {point.notes && (
@@ -268,11 +268,11 @@ const MapPlanning: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      預估費用 (USD)
+                      預估費用 (NTD)
                     </label>
                     <input
                       type="number"
-                      placeholder="0.00"
+                      placeholder="0"
                       value={newPoint.estimatedCost}
                       onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedCost: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -280,15 +280,15 @@ const MapPlanning: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      預估時間 (小時)
+                      預估時間 (分鐘)
                     </label>
                     <input
                       type="number"
-                      placeholder="1.0"
-                      step="0.5"
+                      placeholder="30"
+                      step="5"
                       value={newPoint.estimatedTime}
                       onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedTime: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 border-blue-500"
                     />
                   </div>
                   <div>
@@ -353,7 +353,7 @@ const MapPlanning: React.FC = () => {
                       {tripPoints
                         .filter(p => p.estimatedCost)
                         .reduce((sum, p) => sum + (p.estimatedCost || 0), 0)
-                        .toFixed(2)}
+                        .toFixed(0)} NTD
                     </span>
                   )}
                 </p>

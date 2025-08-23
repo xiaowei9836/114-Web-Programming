@@ -210,24 +210,6 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   return (
     <div className={`relative ${className}`}>
       <div ref={mapRef} className="w-full h-full min-h-[400px]" />
-      
-      {/* 控制按鈕 */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-        <button
-          onClick={clearMarkers}
-          className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-          title="清除標記"
-        >
-          🗑️
-        </button>
-        <button
-          onClick={clearRoute}
-          className="bg-white p-2 rounded-lg shadow-md hover:bg-gray-50 transition-colors"
-          title="清除路線"
-        >
-          🚫
-        </button>
-      </div>
     </div>
   );
 };
