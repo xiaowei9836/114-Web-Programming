@@ -24,6 +24,26 @@ interface TripPoint {
   notes?: string;
 }
 
+interface TripData {
+  title: string;
+  createdAt: string;
+  totalPoints: number;
+  totalEstimatedCost: number;
+  totalEstimatedTime: number;
+  points: Array<{
+    order: number;
+    name: string;
+    address?: string;
+    coordinates: {
+      lat: number;
+      lng: number;
+    };
+    estimatedCost?: number;
+    estimatedTime?: number;
+    notes?: string;
+  }>;
+}
+
 const MapPlanning: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<google.maps.places.PlaceResult[]>([]);
@@ -158,6 +178,162 @@ const MapPlanning: React.FC = () => {
 
   const handleRemovePoint = (id: string) => {
     setTripPoints(prev => prev.filter(point => point.id !== id));
+  };
+
+  // 保存行程功能
+  const handleSaveTrip = () => {
+    if (tripPoints.length === 0) {
+      alert('請先添加至少一個地點才能保存行程');
+      return;
+    }
+
+    // 收集行程數據
+    const tripData: TripData = {
+      title: `我的行程 - ${new Date().toLocaleDateString('zh-TW')}`,
+      createdAt: new Date().toISOString(),
+      totalPoints: tripPoints.length,
+      totalEstimatedCost: tripPoints
+        .filter(p => p.estimatedCost)
+        .reduce((sum, p) => sum + (p.estimatedCost || 0), 0),
+      totalEstimatedTime: tripPoints
+        .filter(p => p.estimatedTime)
+        .reduce((sum, p) => sum + (p.estimatedTime || 0), 0),
+      points: tripPoints.map((point, index) => ({
+        order: index + 1,
+        name: point.location.name,
+        address: point.location.address,
+        coordinates: {
+          lat: point.location.lat,
+          lng: point.location.lng
+        },
+        estimatedCost: point.estimatedCost,
+        estimatedTime: point.estimatedTime,
+        notes: point.notes
+      }))
+    };
+
+    // 創建行程摘要
+    const tripSummary = generateTripSummary(tripData);
+    
+    // 保存到本地存儲
+    saveTripToLocal(tripData);
+    
+    // 導出行程文件
+    exportTripFile(tripData, tripSummary);
+    
+    // 顯示成功消息
+    alert('行程保存成功！已保存到本地並導出文件。');
+  };
+
+  // 生成行程摘要
+  const generateTripSummary = (tripData: TripData) => {
+    const { title, totalPoints, totalEstimatedCost, totalEstimatedTime, points } = tripData;
+    
+    let summary = `${title}\n`;
+    summary += `行程總覽\n`;
+    summary += `總地點數：${totalPoints} 個\n`;
+    summary += `總預估費用：${totalEstimatedCost > 0 ? `$${totalEstimatedCost} NTD` : '未設定'}\n`;
+    summary += `總預估時間：${totalEstimatedTime > 0 ? `${totalEstimatedTime} 分鐘` : '未設定'}\n`;
+    summary += `\n詳細行程：\n`;
+    
+    points.forEach((point) => {
+      summary += `${point.order}. ${point.name}\n`;
+      if (point.address) {
+        summary += `   地址：${point.address}\n`;
+      }
+      if (point.estimatedCost) {
+        summary += `   預估費用：$${point.estimatedCost} NTD\n`;
+      }
+      if (point.estimatedTime) {
+        summary += `   預估時間：${point.estimatedTime} 分鐘\n`;
+      }
+      if (point.notes) {
+        summary += `   備註：${point.notes}\n`;
+      }
+      summary += `\n`;
+    });
+    
+    return summary;
+  };
+
+  // 保存到本地存儲
+  const saveTripToLocal = (tripData: TripData) => {
+    try {
+      // 獲取現有行程
+      const existingTrips = JSON.parse(localStorage.getItem('savedTrips') || '[]');
+      
+      // 添加新行程
+      const newTrip = {
+        ...tripData,
+        id: `trip-${Date.now()}`,
+        savedAt: new Date().toISOString()
+      };
+      
+      existingTrips.push(newTrip);
+      
+      // 限制保存的行程數量（最多保存10個）
+      if (existingTrips.length > 10) {
+        existingTrips.splice(0, existingTrips.length - 10);
+      }
+      
+      // 保存到本地存儲
+      localStorage.setItem('savedTrips', JSON.stringify(existingTrips));
+      
+      console.log('MapPlanning: 行程已保存到本地存儲');
+    } catch (error) {
+      console.error('MapPlanning: 保存到本地存儲失敗:', error);
+    }
+  };
+
+  // 導出行程文件
+  const exportTripFile = (tripData: TripData, tripSummary: string) => {
+    try {
+      // 創建文件名
+      const fileName = `行程規劃_${new Date().toISOString().slice(0, 10)}_${Date.now()}.txt`;
+      
+      // 創建 Blob
+      const blob = new Blob([tripSummary], { type: 'text/plain;charset=utf-8' });
+      
+      // 創建下載連結
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      
+      // 觸發下載
+      document.body.appendChild(link);
+      link.click();
+      
+      // 清理
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      console.log('MapPlanning: 行程文件已導出');
+    } catch (error) {
+      console.error('MapPlanning: 導出文件失敗:', error);
+    }
+  };
+
+  // 查看已保存的行程
+  const handleViewSavedTrips = () => {
+    try {
+      const savedTrips = JSON.parse(localStorage.getItem('savedTrips') || '[]');
+      
+      if (savedTrips.length === 0) {
+        alert('目前沒有保存的行程');
+        return;
+      }
+      
+      // 顯示已保存的行程列表
+      const tripList = savedTrips.map((trip: any, index: number) => 
+        `${index + 1}. ${trip.title} (${trip.totalPoints} 個地點)`
+      ).join('\n');
+      
+      alert(`已保存的行程：\n\n${tripList}`);
+    } catch (error) {
+      console.error('MapPlanning: 讀取已保存行程失敗:', error);
+      alert('讀取已保存行程失敗');
+    }
   };
 
   // 清理超時
@@ -492,13 +668,16 @@ const MapPlanning: React.FC = () => {
               </div>
               <div className="flex space-x-3">
                 <button
-                  onClick={() => {
-                    // 這裡可以添加保存行程的邏輯
-                    alert('行程保存功能開發中...');
-                  }}
+                  onClick={handleSaveTrip}
                   className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
                 >
                   保存行程
+                </button>
+                <button
+                  onClick={handleViewSavedTrips}
+                  className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  查看已保存行程
                 </button>
                 <button
                   onClick={handleClearAll}
