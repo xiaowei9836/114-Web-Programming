@@ -262,7 +262,7 @@ const MapPlanning: React.FC = () => {
                       placeholder="添加地點相關的備註..."
                       value={newPoint.notes}
                       onChange={(e) => setNewPoint(prev => ({ ...prev, notes: e.target.value }))}
-                      rows={3}
+                      rows={1}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
