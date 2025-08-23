@@ -57,6 +57,8 @@ const TripList: React.FC = () => {
           setError('請求超時，請檢查網路連接或後端服務狀態');
         } else if (error.message.includes('Failed to fetch')) {
           setError('無法連接到後端服務，請檢查後端是否正在運行');
+        } else if (error.message.includes('获取旅行列表失败')) {
+          setError('資料庫連接問題，請檢查 MongoDB 服務狀態。如果您是開發者，請確保 MongoDB 已啟動；如果是用戶，請稍後再試');
         } else {
           setError(`載入失敗: ${error.message}`);
         }
