@@ -74,6 +74,13 @@ const MapPlanning: React.FC = () => {
     setTripPoints(items);
   };
 
+  // 測試拖曳功能是否正常工作
+  const testDrag = () => {
+    console.log('MapPlanning: 測試拖曳功能');
+    console.log('MapPlanning: tripPoints 長度:', tripPoints.length);
+    console.log('MapPlanning: 拖曳相關 props 是否正確綁定');
+  };
+
   // 搜尋地點
   const searchPlaces = async (query: string) => {
     if (!query.trim() || !window.google) return;
@@ -302,14 +309,23 @@ const MapPlanning: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-gray-900">行程地點</h2>
-                {tripPoints.length > 0 && (
+                <div className="flex items-center space-x-2">
                   <button
-                    onClick={handleClearAll}
-                    className="text-red-600 hover:text-red-700 text-sm font-medium"
+                    onClick={testDrag}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium px-2 py-1 border border-blue-300 rounded"
+                    title="測試拖曳功能"
                   >
-                    清除全部
+                    測試拖曳
                   </button>
-                )}
+                  {tripPoints.length > 0 && (
+                    <button
+                      onClick={handleClearAll}
+                      className="text-red-600 hover:text-red-700 text-sm font-medium"
+                    >
+                      清除全部
+                    </button>
+                  )}
+                </div>
               </div>
               
               {tripPoints.length === 0 ? (
@@ -319,14 +335,21 @@ const MapPlanning: React.FC = () => {
                   <p className="text-sm">搜尋地點或點擊地圖來開始規劃</p>
                 </div>
               ) : (
-                <DragDropContext onDragEnd={handleDragEnd}>
+                <DragDropContext 
+                  onDragEnd={handleDragEnd}
+                  onDragStart={(result) => console.log('MapPlanning: 拖曳開始:', result)}
+                  onDragUpdate={(result) => console.log('MapPlanning: 拖曳更新:', result)}
+                >
                   <Droppable droppableId="trip-points">
                     {(provided, snapshot) => (
                       <div
                         {...provided.droppableProps}
                         ref={provided.innerRef}
                         className={`space-y-3 ${snapshot.isDraggingOver ? 'bg-blue-50' : ''}`}
-                        style={{ minHeight: '50px' }}
+                        style={{ 
+                          minHeight: '50px',
+                          position: 'relative'
+                        }}
                       >
                         {tripPoints.map((point, index) => (
                           <Draggable key={point.id} draggableId={point.id} index={index}>
@@ -335,13 +358,16 @@ const MapPlanning: React.FC = () => {
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className={`border border-gray-200 rounded-lg p-4 bg-gray-50 cursor-move ${
-                                  snapshot.isDragging ? 'shadow-lg transform rotate-2 bg-blue-100' : ''
+                                className={`border border-gray-200 rounded-lg p-4 bg-gray-50 cursor-move select-none ${
+                                  snapshot.isDragging ? 'shadow-lg transform rotate-2 bg-blue-100 z-50' : ''
                                 }`}
                                 style={{
                                   ...provided.draggableProps.style,
-                                  userSelect: 'none'
+                                  userSelect: 'none',
+                                  touchAction: 'none'
                                 }}
+                                onMouseDown={(e) => console.log('MapPlanning: 滑鼠按下:', e)}
+                                onTouchStart={(e) => console.log('MapPlanning: 觸摸開始:', e)}
                               >
                                 <div className="flex items-start justify-between">
                                   <div className="flex-1">
@@ -368,8 +394,12 @@ const MapPlanning: React.FC = () => {
                                     )}
                                   </div>
                                   <button
-                                    onClick={() => handleRemovePoint(point.id)}
-                                    className="text-red-500 hover:text-red-700 ml-2"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleRemovePoint(point.id);
+                                    }}
+                                    onMouseDown={(e) => e.stopPropagation()}
+                                    className="text-red-500 hover:text-red-700 ml-2 p-1"
                                     title="移除地點"
                                   >
                                     ✕
