@@ -261,9 +261,6 @@ const MapPlanning: React.FC = () => {
     } catch (error) {
       console.error('MapPlanning: 保存到 localStorage 失敗:', error);
     }
-    
-    // 顯示成功消息
-    alert('行程已保存並顯示在畫面上！');
   };
 
   // 生成行程摘要
