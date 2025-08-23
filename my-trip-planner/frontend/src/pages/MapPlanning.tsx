@@ -334,12 +334,36 @@ const MapPlanning: React.FC = () => {
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <div className="flex items-center mb-2">
-                              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full mr-2">
-                                {index + 1}
-                              </span>
-                              <h3 className="font-medium text-gray-900">{point.location.name}</h3>
-                              <span className="ml-2 text-red-500" title="地圖標記">📍</span>
-                            </div>
+                               {showOrderEdit ? (
+                                 <input
+                                   type="number"
+                                   min="1"
+                                   max={tripPoints.length}
+                                   value={index + 1}
+                                   onChange={(e) => {
+                                     const newPosition = parseInt(e.target.value);
+                                     if (newPosition >= 1 && newPosition <= tripPoints.length && newPosition !== index + 1) {
+                                       // 創建新的順序數組
+                                       const newOrder = [...tripPoints];
+                                       // 移除當前地點
+                                       const [movedItem] = newOrder.splice(index, 1);
+                                       // 插入到新位置（減1是因為數組索引從0開始）
+                                       newOrder.splice(newPosition - 1, 0, movedItem);
+                                       setTripPoints(newOrder);
+                                       console.log(`MapPlanning: 將 "${point.location.name}" 從第 ${index + 1} 位移動到第 ${newPosition} 位`);
+                                     }
+                                   }}
+                                   className="w-12 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 border border-blue-300"
+                                   title={`輸入 1-${tripPoints.length} 來調整順序`}
+                                 />
+                               ) : (
+                                 <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full mr-2">
+                                   {index + 1}
+                                 </span>
+                               )}
+                               <h3 className="font-medium text-gray-900">{point.location.name}</h3>
+                               <span className="ml-2 text-red-500" title="地圖標記">📍</span>
+                             </div>
                             {point.location.address && (
                               <p className="text-sm text-gray-600 mb-2">{point.location.address}</p>
                             )}
@@ -356,35 +380,6 @@ const MapPlanning: React.FC = () => {
                             )}
                           </div>
                           <div className="flex flex-col items-center space-y-1 ml-2">
-                            {/* 直接修改順序輸入框 - 根據showOrderEdit狀態顯示/隱藏 */}
-                            {showOrderEdit && (
-                              <div className="flex items-center space-x-1 mb-2">
-                                <span className="text-xs text-gray-500">去第</span>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  max={tripPoints.length}
-                                  value={index + 1}
-                                  onChange={(e) => {
-                                    const newPosition = parseInt(e.target.value);
-                                    if (newPosition >= 1 && newPosition <= tripPoints.length && newPosition !== index + 1) {
-                                      // 創建新的順序數組
-                                      const newOrder = [...tripPoints];
-                                      // 移除當前地點
-                                      const [movedItem] = newOrder.splice(index, 1);
-                                      // 插入到新位置（減1是因為數組索引從0開始）
-                                      newOrder.splice(newPosition - 1, 0, movedItem);
-                                      setTripPoints(newOrder);
-                                      console.log(`MapPlanning: 將 "${point.location.name}" 從第 ${index + 1} 位移動到第 ${newPosition} 位`);
-                                    }
-                                  }}
-                                  className="w-12 px-2 py-1 text-xs border border-gray-300 rounded text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                  title={`輸入 1-${tripPoints.length} 來調整順序`}
-                                />
-                                <span className="text-xs text-gray-500">位</span>
-                              </div>
-                            )}
-                            
                             {/* 移除按鈕 - 放在最上面 */}
                             <button
                               onClick={(e) => {
