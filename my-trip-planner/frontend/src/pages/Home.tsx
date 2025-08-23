@@ -40,13 +40,22 @@ const Home: React.FC = () => {
   return (
     <div className="space-y-12">
       {/* 英雄区域 */}
-      <section className="text-center py-16 bg-gradient-to-br from-blue-50 to-blue-100 rounded-3xl">
-        <div className="max-w-4xl mx-auto px-6">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+      <section 
+        className="text-center py-16 bg-cover bg-center bg-no-repeat rounded-3xl relative"
+        style={{
+          backgroundImage: "url('/images/image-bg.png')"
+        }}
+      >
+        {/* 半透明黑色遮罩，確保文字可讀性 */}
+        <div className="absolute inset-0 bg-black bg-opacity-40 rounded-3xl"></div>
+        
+        {/* 內容區域 */}
+        <div className="relative z-10 max-w-4xl mx-auto px-6">
+          <h1 className="text-5xl font-bold text-white mb-6">
             規劃您的完美旅行
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            從地圖規劃到預算管理，從行程安排到旅行日記，一站式解決您的所有旅行需求
+          <p className="text-xl text-white mb-8 max-w-2xl mx-auto">
+            從地圖規劃到預算管理，從行程安排到旅行日記，一站式解決所有旅行需求
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
