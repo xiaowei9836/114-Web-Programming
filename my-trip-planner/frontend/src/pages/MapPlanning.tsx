@@ -32,6 +32,7 @@ const MapPlanning: React.FC = () => {
   });
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef<number>();
+  const mapRef = useRef<google.maps.Map | null>(null);
 
   // 使用 useCallback 穩定 handleLocationSelect 函數
   const handleLocationSelect = useCallback((location: {
@@ -101,10 +102,67 @@ const MapPlanning: React.FC = () => {
         address: place.formatted_address
       };
       
+      // 立即在地圖上添加大頭針標記
+      if (mapRef.current) {
+        addMarkerToMap(location);
+      }
+      
       setSelectedLocation(location);
       setShowAddForm(true);
       setSearchResults([]);
       setSearchQuery(place.name || '');
+    }
+  };
+
+  // 在地圖上添加標記的函數
+  const addMarkerToMap = (location: {
+    lat: number;
+    lng: number;
+    name: string;
+    address?: string;
+  }) => {
+    if (!mapRef.current) {
+      console.log('地圖實例尚未載入');
+      return;
+    }
+
+    try {
+      // 創建大頭針標記
+      const marker = new window.google.maps.Marker({
+        position: { lat: location.lat, lng: location.lng },
+        map: mapRef.current,
+        title: location.name,
+        icon: {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2C8.13 2 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#FF4444"/>
+            </svg>
+          `),
+          scaledSize: new window.google.maps.Size(24, 24),
+          anchor: new window.google.maps.Point(12, 24)
+        },
+        animation: window.google.maps.Animation.DROP
+      });
+
+      // 創建信息窗口
+      const infoWindow = new window.google.maps.InfoWindow({
+        content: `
+          <div style="padding: 8px; min-width: 200px;">
+            <h3 style="margin: 0 0 5px 0; font-size: 14px; color: #333;">${location.name}</h3>
+            ${location.address ? `<p style="margin: 0; color: #666; font-size: 12px;">${location.address}</p>` : ''}
+            <p style="margin: 5px 0 0 0; color: #999; font-size: 11px;">${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}</p>
+          </div>
+        `
+      });
+
+      // 點擊標記時顯示信息窗口
+      marker.addListener('click', () => {
+        infoWindow.open(mapRef.current, marker);
+      });
+      
+      console.log('已在地圖上添加大頭針標記:', location.name);
+    } catch (error) {
+      console.error('添加地圖標記失敗:', error);
     }
   };
 
@@ -334,6 +392,9 @@ const MapPlanning: React.FC = () => {
                 onLocationSelect={handleLocationSelect}
                 showLocationSearch={false}
                 className="h-96 rounded-lg border border-gray-200"
+                onMapLoad={(map) => {
+                  mapRef.current = map;
+                }}
               />
             </div>
           </div>

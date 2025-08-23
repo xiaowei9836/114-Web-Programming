@@ -9,6 +9,7 @@ interface Location {
 
 interface GoogleMapProps {
   onLocationSelect?: (location: Location) => void;
+  onMapLoad?: (map: google.maps.Map) => void;
   showLocationSearch?: boolean;
   initialCenter?: { lat: number; lng: number };
   initialZoom?: number;
@@ -17,6 +18,7 @@ interface GoogleMapProps {
 
 const GoogleMap: React.FC<GoogleMapProps> = ({
   onLocationSelect,
+  onMapLoad,
   showLocationSearch = true,
   initialCenter = { lat: 25.0330, lng: 121.5654 }, // 台北市中心
   initialZoom = 12,
@@ -75,6 +77,11 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
 
       console.log('GoogleMap: 地圖創建成功');
       mapInstanceRef.current = newMap;
+
+      // 調用 onMapLoad 回調，讓父組件獲取地圖實例
+      if (onMapLoad) {
+        onMapLoad(newMap);
+      }
 
       // 創建路線渲染器
       const newDirectionsRenderer = new google.maps.DirectionsRenderer({
