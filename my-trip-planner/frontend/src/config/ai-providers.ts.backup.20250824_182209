@@ -16,7 +16,7 @@ export interface Message {
 
 // Ollama 配置
 export const OLLAMA_CONFIG = {
-  BASE_URL: import.meta.env.VITE_OLLAMA_BASE_URL || 'http://https://ollama-ai-travel.onrender.com',
+  BASE_URL: import.meta.env.VITE_OLLAMA_BASE_URL || 'http://localhost:11434',
   DEFAULT_MODEL: import.meta.env.VITE_OLLAMA_MODEL || 'llama3.1:8b',
   TIMEOUT: 120000, // 增加到 120 秒超時 (2分鐘)
   // 新增：雲端部署支援
