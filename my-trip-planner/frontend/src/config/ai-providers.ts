@@ -16,8 +16,8 @@ export interface Message {
 
 // Ollama 配置
 export const OLLAMA_CONFIG = {
-  BASE_URL: import.meta.env.VITE_OLLAMA_BASE_URL || 'http://https://ollama-ai-travel.onrender.com',
-  DEFAULT_MODEL: import.meta.env.VITE_OLLAMA_MODEL || 'llama3.1:8b',
+  BASE_URL: import.meta.env.VITE_OLLAMA_BASE_URL || 'https://ollama-ai-travel.onrender.com',
+  DEFAULT_MODEL: import.meta.env.VITE_OLLAMA_MODEL || 'llama2:7b',
   TIMEOUT: 120000, // 增加到 120 秒超時 (2分鐘)
   // 新增：雲端部署支援
   CLOUD_URL: import.meta.env.VITE_OLLAMA_CLOUD_URL || '',
@@ -93,7 +93,7 @@ export const TRAVEL_SYSTEM_PROMPT = `你是一位專業的台灣旅遊顧問，�
 
 // Ollama 提供者
 export class OllamaProvider implements AIProvider {
-  name = 'Ollama (gpt-oss:20b)';
+  name = 'Ollama (llama2:7b)';
   type = 'ollama' as const;
   isLocal = true;
 
@@ -223,7 +223,7 @@ export class OllamaProvider implements AIProvider {
 
 // Ollama 雲端提供者
 export class OllamaCloudProvider implements AIProvider {
-  name = 'Ollama (gpt-oss:120b)';
+  name = 'Ollama (llama2:7b)';
   type = 'ollama' as const;
   isLocal = false;
 
@@ -540,7 +540,7 @@ export class AIProviderManager {
   async getBestProvider(): Promise<AIProvider> {
     const available = this.getAvailableProviders();
     
-    // 優先順序：雲端 Ollama (gpt-oss:120b) > 本地 Ollama (gpt-oss:20b) > OpenAI > 模擬回應
+    // 優先順序：雲端 Ollama (llama2:7b) > 本地 Ollama (llama2:7b) > OpenAI > 模擬回應
     for (const provider of available) {
       try {
         if (provider.isAvailable && await provider.isAvailable()) {
@@ -572,12 +572,12 @@ export class AIProviderManager {
     // 優先使用雲端 Ollama，其次是本地 Ollama，最後是其他服務
     const available = this.getAvailableProviders();
     
-    // 優先檢查雲端 Ollama (gpt-oss:120b)
+    // 優先檢查雲端 Ollama (llama2:7b)
     const cloudOllama = available.find(p => p.type === 'ollama' && !p.isLocal);
     if (cloudOllama && cloudOllama.isAvailable) {
       try {
         if (await cloudOllama.isAvailable()) {
-          console.log('選擇雲端 Ollama (gpt-oss:120b) 作為默認提供者');
+          console.log('選擇雲端 Ollama (llama2:7b) 作為默認提供者');
           return cloudOllama;
         }
       } catch (error) {
@@ -585,12 +585,12 @@ export class AIProviderManager {
       }
     }
     
-    // 檢查本地 Ollama (gpt-oss:20b)
+    // 檢查本地 Ollama (llama2:7b)
     const localOllama = available.find(p => p.type === 'ollama' && p.isLocal);
     if (localOllama && localOllama.isAvailable) {
       try {
         if (await localOllama.isAvailable()) {
-          console.log('選擇本地 Ollama (gpt-oss:20b) 作為默認提供者');
+          console.log('選擇本地 Ollama (llama2:7b) 作為默認提供者');
           return localOllama;
         }
       } catch (error) {
