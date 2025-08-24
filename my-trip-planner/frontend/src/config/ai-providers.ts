@@ -93,7 +93,7 @@ export const TRAVEL_SYSTEM_PROMPT = `你是一位專業的台灣旅遊顧問，�
 
 // Ollama 提供者
 export class OllamaProvider implements AIProvider {
-  name = 'Ollama (本地)';
+  name = 'Ollama (gpt-oss:20b)';
   type = 'ollama' as const;
   isLocal = true;
 
@@ -223,7 +223,7 @@ export class OllamaProvider implements AIProvider {
 
 // Ollama 雲端提供者
 export class OllamaCloudProvider implements AIProvider {
-  name = 'Ollama (雲端)';
+  name = 'Ollama (gpt-oss:120b)';
   type = 'ollama' as const;
   isLocal = false;
 
@@ -524,7 +524,6 @@ export class AIProviderManager {
   private providers: AIProvider[] = [
     new OllamaProvider(),
     new OllamaCloudProvider(),
-    new HuggingFaceProvider(),
     new OpenAIOSSProvider(),
     new MockProvider(),
   ];
@@ -541,7 +540,7 @@ export class AIProviderManager {
   async getBestProvider(): Promise<AIProvider> {
     const available = this.getAvailableProviders();
     
-    // 優先順序：本地 Ollama > 雲端 Ollama > Hugging Face > OpenAI > 模擬回應
+    // 優先順序：雲端 Ollama (gpt-oss:120b) > 本地 Ollama (gpt-oss:20b) > OpenAI > 模擬回應
     for (const provider of available) {
       try {
         if (provider.isAvailable && await provider.isAvailable()) {
@@ -570,45 +569,32 @@ export class AIProviderManager {
   }
 
   async getDefaultProvider(): Promise<AIProvider> {
-    // 優先使用本地 Ollama，其次是 Qwen 模型，最後是其他服務
+    // 優先使用雲端 Ollama，其次是本地 Ollama，最後是其他服務
     const available = this.getAvailableProviders();
     
-    // 優先檢查本地 Ollama
-    const localOllama = available.find(p => p.type === 'ollama' && p.isLocal);
-    if (localOllama && localOllama.isAvailable) {
-      try {
-        if (await localOllama.isAvailable()) {
-          console.log('選擇本地 Ollama 作為默認提供者');
-          return localOllama;
-        }
-      } catch (error) {
-        console.log('本地 Ollama 不可用，嘗試其他提供者');
-      }
-    }
-    
-    // 優先檢查 Hugging Face Qwen 模型 (推薦)
-    const huggingface = available.find(p => p.type === 'huggingface');
-    if (huggingface && huggingface.isAvailable) {
-      try {
-        if (await huggingface.isAvailable()) {
-          console.log('選擇 Hugging Face Qwen 模型作為默認提供者');
-          return huggingface;
-        }
-      } catch (error) {
-        console.log('Hugging Face Qwen 模型不可用，嘗試其他提供者');
-      }
-    }
-    
-    // 檢查雲端 Ollama
+    // 優先檢查雲端 Ollama (gpt-oss:120b)
     const cloudOllama = available.find(p => p.type === 'ollama' && !p.isLocal);
     if (cloudOllama && cloudOllama.isAvailable) {
       try {
         if (await cloudOllama.isAvailable()) {
-          console.log('選擇雲端 Ollama 作為默認提供者');
+          console.log('選擇雲端 Ollama (gpt-oss:120b) 作為默認提供者');
           return cloudOllama;
         }
       } catch (error) {
         console.log('雲端 Ollama 不可用，嘗試其他提供者');
+      }
+    }
+    
+    // 檢查本地 Ollama (gpt-oss:20b)
+    const localOllama = available.find(p => p.type === 'ollama' && p.isLocal);
+    if (localOllama && localOllama.isAvailable) {
+      try {
+        if (await localOllama.isAvailable()) {
+          console.log('選擇本地 Ollama (gpt-oss:20b) 作為默認提供者');
+          return localOllama;
+        }
+      } catch (error) {
+        console.log('本地 Ollama 不可用，嘗試其他提供者');
       }
     }
     
