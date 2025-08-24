@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: ollama-ai-travel
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: OLLAMA_HOST
+        value: 0.0.0.0
+      - key: OLLAMA_MODELS
+        value: "gpt-oss:20b,gpt-oss:120b"
+    healthCheckPath: /api/tags
+    autoDeploy: true
+    buildCommand: docker build -t ollama-travel .
+    startCommand: docker run -p 11434:11434 ollama-travel

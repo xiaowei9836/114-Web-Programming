@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: ollama-ai-travel
+    env: shell
+    plan: free
+    buildCommand: |
+      # 安裝依賴
+      curl -fsSL https://ollama.ai/install.sh | sh
+      # 創建必要的目錄
+      mkdir -p ~/.ollama
+    startCommand: |
+      # 啟動 Ollama 服務
+      export OLLAMA_HOST=0.0.0.0
+      ollama serve
+    envVars:
+      - key: OLLAMA_HOST
+        value: 0.0.0.0
+      - key: OLLAMA_MODELS
+        value: "gpt-oss:20b,gpt-oss:72b"
+    healthCheckPath: /api/tags
+    autoDeploy: true

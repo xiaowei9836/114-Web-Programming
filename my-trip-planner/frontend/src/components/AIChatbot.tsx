@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bot, Send, X, Minimize2, Maximize2, Settings, RefreshCw } from 'lucide-react';
 import { aiProviderManager, type AIProvider, MockProvider } from '../config/ai-providers';
+import MarkdownRenderer from './MarkdownRenderer';
 
 interface Message {
   id: string;
@@ -18,6 +19,9 @@ interface AIChatbotProps {
   messages?: Message[];
   onAddMessage?: (message: Omit<Message, 'id' | 'timestamp'>) => void;
 }
+
+// 視窗狀態類型
+type WindowState = 'minimized' | 'normal' | 'maximized';
 
 const AIChatbot: React.FC<AIChatbotProps> = ({
   isOpen,
@@ -53,16 +57,168 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [availableProviders, setAvailableProviders] = useState<AIProvider[]>([]);
   const [isTestingProvider, setIsTestingProvider] = useState(false);
+  
+  // 視窗狀態管理
+  const [windowState, setWindowState] = useState<WindowState>('normal');
+  const [position, setPosition] = useState({ 
+    x: window.innerWidth - 400, // 右下角位置，距離右邊緣 16px
+    y: window.innerHeight - 540  // 距離下邊緣 16px
+  });
+  const [size, setSize] = useState({ width: 384, height: 500 }); // 預設大小
+  
+  // 拖拽和調整大小相關
+  const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, width: 0, height: 0 });
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const chatbotRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // 視窗狀態管理函數
+  const toggleMaximize = () => {
+    if (windowState === 'maximized') {
+      setWindowState('normal');
+      setSize({ width: 384, height: 500 });
+      // 還原到右下角位置
+      setPosition({ 
+        x: window.innerWidth - 400,
+        y: window.innerHeight - 540
+      });
+    } else {
+      setWindowState('maximized');
+      // 只佔據右半邊螢幕，類似 Cursor 的行為
+      const rightHalfWidth = Math.floor(window.innerWidth / 2);
+      setSize({ 
+        width: rightHalfWidth - 20, // 右半邊減去右邊距
+        height: window.innerHeight - 40 // 全高減去上下邊距
+      });
+      setPosition({ 
+        x: rightHalfWidth + 10, // 從右半邊開始，加上左邊距
+        y: 20 // 距離頂部 20px
+      });
+    }
+  };
+
+  const handleMinimize = () => {
+    if (onMinimize) {
+      onMinimize();
+    } else {
+      setWindowState('minimized');
+    }
+  };
+
+  // 拖拽開始
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (windowState === 'maximized') return;
+    
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    });
+  };
+
+  // 拖拽中
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging || windowState === 'maximized') return;
+    
+    setPosition({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    });
+  };
+
+  // 拖拽結束
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  // 調整大小開始
+  const handleResizeStart = (e: React.MouseEvent) => {
+    if (windowState === 'maximized') return;
+    
+    e.stopPropagation();
+    setIsResizing(true);
+    setResizeStart({
+      x: e.clientX,
+      y: e.clientY,
+      width: size.width,
+      height: size.height
+    });
+  };
+
+  // 調整大小中
+  const handleResizeMove = (e: MouseEvent) => {
+    if (!isResizing || windowState === 'maximized') return;
+    
+    const deltaX = e.clientX - resizeStart.x;
+    const deltaY = e.clientY - resizeStart.y;
+    
+    setSize({
+      width: Math.max(300, resizeStart.width + deltaX),
+      height: Math.max(400, resizeStart.height + deltaY)
+    });
+  };
+
+  // 調整大小結束
+  const handleResizeUp = () => {
+    setIsResizing(false);
+  };
+
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // 添加滑鼠事件監聽器
+  useEffect(() => {
+    if (isDragging || isResizing) {
+      const handleMouseMoveEvent = isDragging ? handleMouseMove : handleResizeMove;
+      const handleMouseUpEvent = isDragging ? handleMouseUp : handleResizeUp;
+      
+      if (windowState !== 'maximized') {
+        document.addEventListener('mousemove', handleMouseMoveEvent);
+        document.addEventListener('mouseup', handleMouseUpEvent);
+        
+        return () => {
+          document.removeEventListener('mousemove', handleMouseMoveEvent);
+          document.removeEventListener('mouseup', handleMouseUpEvent);
+        };
+      }
+    }
+  }, [isDragging, isResizing, windowState]);
+
+  // 處理視窗大小變化
+  useEffect(() => {
+    const handleResize = () => {
+      if (windowState === 'maximized') {
+        // 最大化模式下，始終保持右半邊佈局
+        const rightHalfWidth = Math.floor(window.innerWidth / 2);
+        setSize({ 
+          width: rightHalfWidth - 20, // 右半邊減去右邊距
+          height: window.innerHeight - 40 // 全高減去上下邊距
+        });
+        setPosition({ 
+          x: rightHalfWidth + 10, // 從右半邊開始，加上左邊距
+          y: 20 // 距離頂部 20px
+        });
+      } else {
+        // 正常模式下，調整位置以保持在右下角
+        setPosition({ 
+          x: window.innerWidth - 400,
+          y: window.innerHeight - 540
+        });
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [windowState]);
 
   // 初始化 AI 提供者
   useEffect(() => {
@@ -280,11 +436,17 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
 
   if (!isOpen) return null;
 
-  if (isMinimized) {
+  if (isMinimized || windowState === 'minimized') {
     return (
       <div className={`fixed bottom-4 right-4 z-50 ${className}`}>
         <button
-          onClick={onMinimize}
+          onClick={() => {
+            if (onMinimize) {
+              onMinimize();
+            } else {
+              setWindowState('normal');
+            }
+          }}
           className="bg-indigo-600 text-white p-3 rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
           title="展開AI諮詢"
         >
@@ -295,33 +457,60 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
   }
 
   return (
-    <div className={`fixed bottom-4 right-4 z-50 w-96 h-[500px] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col ${className}`}>
-      {/* 標題欄 */}
-      <div className="bg-indigo-600 text-white p-4 rounded-t-lg flex items-center justify-between">
+    <div
+      ref={chatbotRef}
+      className={`fixed z-50 bg-white shadow-2xl border border-gray-200 flex flex-col transition-all duration-200 ${
+        windowState === 'maximized' 
+          ? 'rounded-l-lg' // 最大化時只保留左邊圓角，因為右邊貼邊
+          : 'rounded-lg'
+      } ${className}`}
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        width: `${size.width}px`,
+        height: `${size.height}px`,
+        cursor: isDragging ? 'grabbing' : 'default'
+      }}
+    >
+      {/* 標題欄 - 可拖拽 */}
+      <div 
+        className="bg-indigo-600 text-white p-4 rounded-t-lg flex items-center justify-between cursor-grab active:cursor-grabbing"
+        onMouseDown={handleMouseDown}
+      >
         <div className="flex items-center space-x-2">
           <Bot className="h-5 w-5" />
           <h3 className="font-semibold">AI旅遊顧問</h3>
+
         </div>
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="text-white hover:text-indigo-200 transition-colors"
+            className="text-white hover:text-indigo-200 transition-colors p-1 rounded"
             title="設置"
           >
             <Settings className="h-4 w-4" />
           </button>
-          {onMinimize && (
-            <button
-              onClick={onMinimize}
-              className="text-white hover:text-indigo-200 transition-colors"
-              title="最小化"
-            >
+          <button
+            onClick={toggleMaximize}
+            className="text-white hover:text-indigo-200 transition-colors p-1 rounded"
+            title={windowState === 'maximized' ? '還原' : '最大化'}
+          >
+            {windowState === 'maximized' ? (
               <Minimize2 className="h-4 w-4" />
-            </button>
-          )}
+            ) : (
+              <Maximize2 className="h-4 w-4" />
+            )}
+          </button>
+          <button
+            onClick={handleMinimize}
+            className="text-white hover:text-indigo-200 transition-colors p-1 rounded"
+            title="最小化"
+          >
+            <Minimize2 className="h-4 w-4" />
+          </button>
           <button
             onClick={onToggle}
-            className="text-white hover:text-indigo-200 transition-colors"
+            className="text-white hover:text-indigo-200 transition-colors p-1 rounded"
             title="關閉"
           >
             <X className="h-4 w-4" />
@@ -343,7 +532,11 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
                   : 'bg-white text-gray-800 border border-gray-200'
               }`}
             >
-              <div className="whitespace-pre-line text-sm text-left">{message.content}</div>
+              {message.type === 'assistant' ? (
+                <MarkdownRenderer content={message.content} />
+              ) : (
+                <div className="whitespace-pre-line text-sm text-left">{message.content}</div>
+              )}
               <div className={`text-xs mt-2 text-left ${
                 message.type === 'user' ? 'text-indigo-200' : 'text-gray-500'
               }`}>
@@ -371,6 +564,19 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
         
         <div ref={messagesEndRef} />
       </div>
+
+      {/* 調整大小手柄 */}
+      {windowState !== 'maximized' && (
+        <div 
+          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+          onMouseDown={handleResizeStart}
+          title="拖拽調整大小"
+        >
+          <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M22 22H20V20H22V22ZM22 18H20V16H22V18ZM18 22H16V20H18V22ZM18 18H16V16H18V18ZM14 22H12V20H14V22ZM22 14H20V12H22V14Z"/>
+          </svg>
+        </div>
+      )}
 
       {/* 設置區域 */}
       {showSettings && (

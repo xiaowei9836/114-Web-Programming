@@ -40,14 +40,19 @@ export const OLLAMA_CONFIG = {
 export const HUGGINGFACE_CONFIG = {
   API_KEY: import.meta.env.VITE_HUGGINGFACE_API_KEY || '',
   BASE_URL: 'https://api-inference.huggingface.co',
-  DEFAULT_MODEL: import.meta.env.VITE_HUGGINGFACE_MODEL || 'microsoft/DialoGPT-medium',
-  TIMEOUT: 30000,
-  // 可用模型列表
+  DEFAULT_MODEL: import.meta.env.VITE_HUGGINGFACE_MODEL || 'Qwen/Qwen2.5-7B-Instruct',
+  TIMEOUT: 60000, // 增加到 60 秒，Qwen 模型需要更多時間
+  // 可用模型列表 - 優先推薦 Qwen 系列
   AVAILABLE_MODELS: [
-    'microsoft/DialoGPT-medium',           // Microsoft 對話模型
+    'Qwen/Qwen2.5-7B-Instruct',           // 🆕 阿里通義千問 2.5 7B (推薦)
+    'Qwen/Qwen2.5-14B-Instruct',          // 🆕 阿里通義千問 2.5 14B
+    'Qwen/Qwen2.5-32B-Instruct',          // 🆕 阿里通義千問 2.5 32B
+    'Qwen/Qwen2.5-72B-Instruct',          // 🆕 阿里通義千問 2.5 72B
+    'Qwen/Qwen2-7B-Instruct',             // 阿里通義千問 2.0 7B
+    'Qwen/Qwen2-14B-Instruct',            // 阿里通義千問 2.0 14B
+    'Qwen/Qwen2-72B-Instruct',            // 阿里通義千問 2.0 72B
     'meta-llama/Llama-3.1-8B-Instruct',   // Meta Llama 3.1 8B
     'mistralai/Mistral-7B-Instruct-v0.2', // Mistral 7B v0.2
-    'Qwen/Qwen2-7B-Instruct',             // 阿里通義千問 2.0 7B
     'google/gemma-7b-it',                  // Google Gemma 7B
     'microsoft/Phi-3-mini-4k-instruct',   // Microsoft Phi-3 Mini
     'HuggingFaceH4/zephyr-7b-beta',       // Zephyr 7B Beta
@@ -347,6 +352,23 @@ export class HuggingFaceProvider implements AIProvider {
       const recentHistory = history.slice(-4); // 保留最近4條訊息
       const prompt = this.buildPrompt(message, recentHistory);
 
+      // 根據模型類型選擇不同的參數
+      const isQwenModel = HUGGINGFACE_CONFIG.DEFAULT_MODEL.includes('Qwen');
+      const parameters = {
+        max_new_tokens: isQwenModel ? 6000 : 4000, // Qwen 模型支持更長回應
+        temperature: 0.7,
+        do_sample: true,
+        return_full_text: false,
+        // Qwen 模型特殊參數
+        ...(isQwenModel && {
+          top_p: 0.9,
+          top_k: 40,
+          repetition_penalty: 1.1,
+          pad_token_id: 151643, // Qwen 特殊 token
+          eos_token_id: 151645, // Qwen 結束 token
+        })
+      };
+
       const response = await fetch(`${HUGGINGFACE_CONFIG.BASE_URL}/models/${HUGGINGFACE_CONFIG.DEFAULT_MODEL}`, {
         method: 'POST',
         headers: {
@@ -355,12 +377,7 @@ export class HuggingFaceProvider implements AIProvider {
         },
         body: JSON.stringify({
           inputs: prompt,
-          parameters: {
-            max_new_tokens: 4000, // 大幅增加回應長度限制，支持超長詳細回答
-            temperature: 0.7,
-            do_sample: true,
-            return_full_text: false,
-          }
+          parameters
         }),
         signal: AbortSignal.timeout(HUGGINGFACE_CONFIG.TIMEOUT)
       });
@@ -553,7 +570,7 @@ export class AIProviderManager {
   }
 
   async getDefaultProvider(): Promise<AIProvider> {
-    // 優先使用本地 Ollama，其次是雲端服務，最後是模擬回應
+    // 優先使用本地 Ollama，其次是 Qwen 模型，最後是其他服務
     const available = this.getAvailableProviders();
     
     // 優先檢查本地 Ollama
@@ -569,6 +586,19 @@ export class AIProviderManager {
       }
     }
     
+    // 優先檢查 Hugging Face Qwen 模型 (推薦)
+    const huggingface = available.find(p => p.type === 'huggingface');
+    if (huggingface && huggingface.isAvailable) {
+      try {
+        if (await huggingface.isAvailable()) {
+          console.log('選擇 Hugging Face Qwen 模型作為默認提供者');
+          return huggingface;
+        }
+      } catch (error) {
+        console.log('Hugging Face Qwen 模型不可用，嘗試其他提供者');
+      }
+    }
+    
     // 檢查雲端 Ollama
     const cloudOllama = available.find(p => p.type === 'ollama' && !p.isLocal);
     if (cloudOllama && cloudOllama.isAvailable) {
@@ -579,19 +609,6 @@ export class AIProviderManager {
         }
       } catch (error) {
         console.log('雲端 Ollama 不可用，嘗試其他提供者');
-      }
-    }
-    
-    // 檢查 Hugging Face
-    const huggingface = available.find(p => p.type === 'huggingface');
-    if (huggingface && huggingface.isAvailable) {
-      try {
-        if (await huggingface.isAvailable()) {
-          console.log('選擇 Hugging Face 作為默認提供者');
-          return huggingface;
-        }
-      } catch (error) {
-        console.log('Hugging Face 不可用，嘗試其他提供者');
       }
     }
     
