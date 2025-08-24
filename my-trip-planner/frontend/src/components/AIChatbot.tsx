@@ -29,16 +29,9 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
   onAddMessage
 }) => {
   // 使用外部消息狀態，如果沒有則使用內部狀態
-  const [internalMessages, setInternalMessages] = useState<Message[]>([
-    {
-      id: '1',
-      type: 'assistant',
-      content: '您好！我是您的智能旅遊顧問 🤖\n\n我可以幫助您：\n• 規劃旅遊路線\n• 預算管理建議\n• 景點推薦\n• 行程優化\n• 旅遊小貼士\n\n請告訴我您的旅遊需求，我會為您提供專業建議！',
-      timestamp: new Date()
-    }
-  ]);
+  const [internalMessages, setInternalMessages] = useState<Message[]>([]);
   
-  const messages = externalMessages || internalMessages;
+  const messages = externalMessages && externalMessages.length > 0 ? externalMessages : internalMessages;
   const setMessages = onAddMessage ? 
     (updater: Message[] | ((prev: Message[]) => Message[])) => {
       if (typeof updater === 'function') {
@@ -89,6 +82,37 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
     setAvailableProviders(aiProviderManager.getAvailableProviders());
   }, []);
 
+  // 如果沒有外部消息且內部消息也為空，添加歡迎訊息
+  useEffect(() => {
+    if ((!externalMessages || externalMessages.length === 0) && internalMessages.length === 0) {
+      const welcomeMessage: Message = {
+        id: 'welcome',
+        type: 'assistant',
+        content: `🎉 歡迎使用 AI 旅遊顧問！我是您的專屬旅遊規劃助手 🤖
+
+💡 **我可以幫助您：**
+• 🗺️ 規劃旅遊路線和行程安排
+• 💰 提供預算管理和節省建議
+• 🏛️ 推薦熱門景點和隱藏美食
+• ⏰ 優化行程時間安排
+• 🏨 酒店和交通建議
+• 🌍 目的地文化和注意事項
+• 📱 實用的旅遊小貼士
+
+🚀 **快速開始：**
+您可以這樣問我：
+• "我想去日本東京旅遊5天，預算3萬台幣，請幫我規劃"
+• "推薦台北週末兩日遊的景點和美食"
+• "如何規劃歐洲背包旅行？"
+• "去泰國旅遊需要注意什麼？"
+
+💬 請告訴我您的旅遊需求，我會為您量身定制專業建議！`,
+        timestamp: new Date()
+      };
+      setInternalMessages([welcomeMessage]);
+    }
+  }, [externalMessages, internalMessages.length]);
+
   // 測試提供者連接
   const testProvider = async (provider: AIProvider) => {
     setIsTestingProvider(true);
@@ -105,6 +129,38 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
     } finally {
       setIsTestingProvider(false);
     }
+  };
+
+  // 檢查回應是否被截斷
+  const checkIfTruncated = (response: string): boolean => {
+    // 檢查常見的截斷跡象
+    const truncationIndicators = [
+      /\.\.\.$/,           // 以省略號結尾
+      /…$/,               // 以省略號結尾（中文）
+      /---$/,             // 以破折號結尾
+      /===$/,             // 以等號結尾
+      /表格不完整/,        // 表格不完整提示
+      /未完待續/,          // 未完待續提示
+      /請稍後/,            // 請稍後提示
+      /更多內容/,          // 更多內容提示
+    ];
+    
+    // 檢查是否以不完整的句子結尾
+    const incompleteSentenceEndings = [
+      /[^。！？\n]$/,     // 不以句號、感嘆號、問號或換行結尾
+      /[^。！？\n]\s*$/,  // 不以句號、感嘆號、問號或換行結尾（可能有空格）
+    ];
+    
+    // 檢查回應長度（如果太短可能是截斷的）
+    const isTooShort = response.length < 100;
+    
+    // 檢查是否有截斷跡象
+    const hasTruncationIndicator = truncationIndicators.some(pattern => pattern.test(response));
+    
+    // 檢查是否以不完整句子結尾
+    const hasIncompleteEnding = incompleteSentenceEndings.some(pattern => pattern.test(response));
+    
+    return hasTruncationIndicator || hasIncompleteEnding || isTooShort;
   };
 
   const handleSendMessage = async () => {
@@ -132,6 +188,9 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
       
       const response = await currentProvider.sendMessage(inputValue.trim(), conversationHistory);
       
+      // 檢查回應是否被截斷
+      const isTruncated = checkIfTruncated(response);
+      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
@@ -140,6 +199,19 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      
+      // 如果回應被截斷，自動添加"繼續"提示
+      if (isTruncated) {
+        setTimeout(() => {
+          const continueMessage: Message = {
+            id: (Date.now() + 2).toString(),
+            type: 'assistant',
+            content: `⚠️ **回應可能被截斷**\n\n看起來我的回答沒有完整顯示。您可以：\n\n1. **重新提問**：用更簡潔的方式描述您的需求\n2. **分段提問**：將複雜問題分成幾個小問題\n3. **具體提問**：針對特定方面詢問（如只問交通、只問住宿等）\n\n或者，您可以告訴我您最關心的部分，我會重點回答！`,
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, continueMessage]);
+        }, 1000);
+      }
     } catch (error) {
       console.error('AI回應錯誤:', error);
       let errorContent = '抱歉，我遇到了一些問題。請稍後再試，或者重新描述您的需求。';

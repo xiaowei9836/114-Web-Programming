@@ -75,6 +75,15 @@ export const TRAVEL_SYSTEM_PROMPT = `你是一位專業的台灣旅遊顧問，�
 
 請用繁體中文回答，提供實用、具體的建議。回答要結構化，使用表情符號和項目符號讓內容更易讀。
 
+**重要：** 當用戶詢問旅遊規劃時，請提供完整、詳細的回答，包括：
+- 完整的行程安排（時間、地點、活動）
+- 具體的交通建議和費用
+- 實用的旅遊小貼士
+- 預算分配建議
+- 季節性注意事項
+
+不要因為字數限制而截斷回答，確保提供完整的旅遊建議。
+
 如果用戶的問題超出旅遊範圍，請禮貌地引導回旅遊相關話題。`;
 
 // Ollama 提供者
@@ -133,9 +142,9 @@ export class OllamaProvider implements AIProvider {
             top_p: 0.9,
             top_k: 40,
             repeat_penalty: 1.1,
-            num_predict: 512, // 限制回應長度以減少時間
-            num_ctx: 2048,    // 減少上下文長度
-            seed: 42,         // 固定種子以增加一致性
+            num_predict: 8192, // 大幅增加回應長度限制，支持超長詳細回答
+            num_ctx: 8192,     // 大幅增加上下文長度，支持完整對話
+            seed: 42,          // 固定種子以增加一致性
           }
         }),
         signal: controller.signal
@@ -262,9 +271,9 @@ export class OllamaCloudProvider implements AIProvider {
             top_p: 0.9,
             top_k: 40,
             repeat_penalty: 1.1,
-            num_predict: 512, // 限制回應長度以減少時間
-            num_ctx: 2048,    // 減少上下文長度
-            seed: 42,         // 固定種子以增加一致性
+            num_predict: 8192, // 大幅增加回應長度限制，支持超長詳細回答
+            num_ctx: 8192,     // 大幅增加上下文長度，支持完整對話
+            seed: 42,          // 固定種子以增加一致性
           }
         }),
         signal: AbortSignal.timeout(OLLAMA_CONFIG.TIMEOUT)
@@ -347,7 +356,7 @@ export class HuggingFaceProvider implements AIProvider {
         body: JSON.stringify({
           inputs: prompt,
           parameters: {
-            max_new_tokens: 500,
+            max_new_tokens: 4000, // 大幅增加回應長度限制，支持超長詳細回答
             temperature: 0.7,
             do_sample: true,
             return_full_text: false,

@@ -31,7 +31,7 @@ const Home: React.FC = () => {
     {
       icon: <Bell className="h-12 w-12 text-purple-600" />,
       title: '旅行提醒',
-      description: '設置重要提醒，如航班時間、酒店入住等',
+      description: '設置重要提醒，如航班時間、飯店入住等',
       color: 'bg-purple-50',
       link: '/trips'
     },
