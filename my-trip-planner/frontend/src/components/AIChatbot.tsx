@@ -623,32 +623,20 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
 
             {/* 提供者說明 */}
             <div className="text-xs text-gray-500 space-y-1">
-              {currentProvider?.type === 'ollama' && (
+              {currentProvider?.type === 'ollama' && currentProvider?.isLocal && (
                 <div>
-                  <span className="text-green-600">✓ 本地 Ollama 服務</span>
-                  <br />
-                  <span>請確保 Ollama 正在本地運行 (http://localhost:11434)</span>
+                  <span className="text-green-600">✓ Ollama 服務</span>
                 </div>
               )}
-              {currentProvider?.type === 'huggingface' && (
+              {currentProvider?.type === 'ollama' && !currentProvider?.isLocal && (
                 <div>
-                  <span className="text-blue-600">✓ Hugging Face 開源模型</span>
-                  <br />
-                  <span>需要設置 VITE_HUGGINGFACE_API_KEY</span>
-                </div>
-              )}
-              {currentProvider?.type === 'openai' && (
-                <div>
-                  <span className="text-purple-600">✓ OpenAI API</span>
-                  <br />
-                  <span>需要設置 VITE_OPENAI_API_KEY</span>
+                  <span className="text-blue-600">✓ 雲端 Ollama 服務</span>
+                  <span className="text-gray-500 ml-2">(維護中)</span>
                 </div>
               )}
               {currentProvider?.name === '模擬回應 (測試)' && (
                 <div>
-                  <span className="text-orange-600">⚠ 模擬回應模式</span>
-                  <br />
-                  <span>僅供測試，回應內容固定</span>
+                  <span className="text-orange-600">⚠ 模擬回應模式 僅供測試，回應內容固定</span>
                 </div>
               )}
             </div>

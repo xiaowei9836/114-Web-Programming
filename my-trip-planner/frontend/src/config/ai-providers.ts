@@ -16,11 +16,19 @@ export interface Message {
 
 // Ollama 配置
 export const OLLAMA_CONFIG = {
+  // 本地 Ollama 服務
+  LOCAL_URL: 'http://localhost:11434',
+  // 雲端 Ollama 服務
+  CLOUD_URL: 'https://ollama-ai-travel.onrender.com',
+  // 使用 CORS 代理服務來解決跨域問題
   BASE_URL: import.meta.env.VITE_OLLAMA_BASE_URL || 'https://ollama-ai-travel.onrender.com',
-  DEFAULT_MODEL: import.meta.env.VITE_OLLAMA_MODEL || 'llama2:7b',
-  TIMEOUT: 120000, // 增加到 120 秒超時 (2分鐘)
+  // 備用 CORS 代理服務
+  CORS_PROXY_URL: 'https://cors-proxy-ollama.onrender.com/',
+  // 直接 URL（可能會有 CORS 問題）
+  DIRECT_URL: 'https://ollama-ai-travel.onrender.com',
+  DEFAULT_MODEL: import.meta.env.VITE_OLLAMA_MODEL || 'llama2:7b', // 使用穩定可靠的模型
+  TIMEOUT: 300000, // 增加到 5 分鐘超時，給 AI 更多思考時間
   // 新增：雲端部署支援
-  CLOUD_URL: import.meta.env.VITE_OLLAMA_CLOUD_URL || '',
   IS_CLOUD: import.meta.env.VITE_OLLAMA_CLOUD_URL ? true : false,
   // 可用模型列表
   AVAILABLE_MODELS: [
@@ -91,11 +99,60 @@ export const TRAVEL_SYSTEM_PROMPT = `你是一位專業的台灣旅遊顧問，�
 
 如果用戶的問題超出旅遊範圍，請禮貌地引導回旅遊相關話題。`;
 
-// Ollama 提供者
+// Ollama 本地提供者 - phi3:mini
 export class OllamaProvider implements AIProvider {
-  name = 'Ollama (llama2:7b)';
+  name = 'Ollama local (phi3:mini)';
   type = 'ollama' as const;
   isLocal = true;
+
+  // 智能選擇可用的 URL
+  private async getWorkingUrl(): Promise<string> {
+    // 檢查是否為線上環境（通過檢查當前域名）
+    const isOnline = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    
+    let urls: string[];
+    if (isOnline) {
+      // 線上環境：優先使用雲端服務
+      urls = [
+        OLLAMA_CONFIG.CLOUD_URL,                    // 1. 雲端 Ollama (優先)
+        `${OLLAMA_CONFIG.CORS_PROXY_URL}${encodeURIComponent(OLLAMA_CONFIG.CLOUD_URL)}`, // 2. CORS 代理
+        OLLAMA_CONFIG.BASE_URL,                     // 3. 環境變數指定的 URL
+      ];
+    } else {
+      // 本地環境：優先使用本地服務
+      urls = [
+        OLLAMA_CONFIG.LOCAL_URL,                    // 1. 本地 Ollama (優先)
+        OLLAMA_CONFIG.BASE_URL,                     // 2. 環境變數指定的 URL
+        OLLAMA_CONFIG.CLOUD_URL,                    // 3. 雲端 Ollama
+        `${OLLAMA_CONFIG.CORS_PROXY_URL}${encodeURIComponent(OLLAMA_CONFIG.CLOUD_URL)}`  // 4. CORS 代理
+      ];
+    }
+
+    for (const url of urls) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        console.log(`🔍 測試 Ollama URL: ${url}`);
+        
+        const response = await fetch(`${url}/api/tags`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          console.log(`✅ 找到可用的 Ollama URL: ${url}`);
+          return url;
+        }
+      } catch (error) {
+        console.log(`❌ URL ${url} 不可用:`, error);
+        continue;
+      }
+    }
+    
+    throw new Error('所有 Ollama URL 都不可用');
+  }
 
   isConfigured(): boolean {
     return true; // Ollama 總是可用的（如果本地運行）
@@ -103,15 +160,39 @@ export class OllamaProvider implements AIProvider {
 
   async isAvailable(): Promise<boolean> {
     try {
+      const workingUrl = await this.getWorkingUrl();
+      
+      // 對於小型模型，使用快速檢查
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒超時
       
-      const response = await fetch(`${OLLAMA_CONFIG.BASE_URL}/api/tags`, {
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      return response.ok;
+      try {
+        // 只檢查模型是否存在，不進行實際推理
+        const response = await fetch(`${workingUrl}/api/tags`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json();
+          const hasModel = data.models?.some((model: any) => model.name === 'phi3:mini');
+          if (hasModel) {
+            console.log('✅ phi3:mini 模型可用');
+            return true;
+          }
+        }
+        
+        console.log('❌ phi3:mini 模型不可用');
+        return false;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log('⚠️ phi3:mini 模型檢查超時，但模型可能可用');
+          return true; // 超時時假設模型可用，避免誤判
+        }
+        throw error;
+      }
     } catch (error) {
       console.log('Ollama 可用性檢查失敗:', error);
       return false;
@@ -120,6 +201,9 @@ export class OllamaProvider implements AIProvider {
 
   async sendMessage(message: string, history: Message[]): Promise<string> {
     try {
+      // 獲取可用的 URL
+      const workingUrl = await this.getWorkingUrl();
+      
       // 預載入模型以減少回應延遲
       await this.preloadModel();
       
@@ -133,7 +217,7 @@ export class OllamaProvider implements AIProvider {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), OLLAMA_CONFIG.TIMEOUT);
 
-      const response = await fetch(`${OLLAMA_CONFIG.BASE_URL}/api/chat`, {
+      const response = await fetch(`${workingUrl}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -143,13 +227,17 @@ export class OllamaProvider implements AIProvider {
           messages: messages,
           stream: false,
           options: {
-            temperature: 0.7,
-            top_p: 0.9,
-            top_k: 40,
-            repeat_penalty: 1.1,
-            num_predict: 8192, // 大幅增加回應長度限制，支持超長詳細回答
-            num_ctx: 8192,     // 大幅增加上下文長度，支持完整對話
-            seed: 42,          // 固定種子以增加一致性
+            temperature: 0.8,        // 稍微增加創造性
+            top_p: 0.9,             // 保持多樣性
+            top_k: 40,              // 保持選擇範圍
+            repeat_penalty: 1.1,    // 避免重複
+            num_predict: 4096,      // phi3:mini 模型較小，使用適中的回應長度
+            num_ctx: 4096,          // phi3:mini 模型較小，使用適中的上下文長度
+            seed: 42,               // 固定種子以增加一致性
+            tfs_z: 0.7,            // 減少無關內容
+            mirostat: 2,            // 使用 mirostat 2.0 進行更好的控制
+            mirostat_tau: 5.0,     // 目標熵值
+            mirostat_eta: 0.1,     // 學習率
           }
         }),
         signal: controller.signal
@@ -168,7 +256,7 @@ export class OllamaProvider implements AIProvider {
       
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          throw new Error(`Ollama 回應超時 (${OLLAMA_CONFIG.TIMEOUT / 1000}秒)，請稍後再試。\n\n建議：\n1. 檢查系統資源是否充足\n2. 嘗試使用較小的模型 (如 gpt-oss:20b)\n3. 重新啟動 Ollama 服務`);
+          throw new Error(`Ollama 回應超時 (${OLLAMA_CONFIG.TIMEOUT / 1000}秒)，請稍後再試。\n\n建議：\n1. 檢查系統資源是否充足\n2. 嘗試使用較小的模型 (如 phi3:mini)\n3. 重新啟動 Ollama 服務\n4. 複雜問題需要更多思考時間，請耐心等待`);
         } else if (error.message.includes('API 錯誤')) {
           throw new Error(`Ollama API 錯誤: ${error.message}`);
         } else if (error.message.includes('fetch')) {
@@ -182,8 +270,11 @@ export class OllamaProvider implements AIProvider {
 
   async preloadModel(): Promise<void> {
     try {
+      // 獲取可用的 URL
+      const workingUrl = await this.getWorkingUrl();
+      
       // 發送一個輕量級的請求來預載入模型
-      const response = await fetch(`${OLLAMA_CONFIG.BASE_URL}/api/generate`, {
+      const response = await fetch(`${workingUrl}/api/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -208,7 +299,8 @@ export class OllamaProvider implements AIProvider {
 
   async getModels(): Promise<string[]> {
     try {
-      const response = await fetch(`${OLLAMA_CONFIG.BASE_URL}/api/tags`);
+      const workingUrl = await this.getWorkingUrl();
+      const response = await fetch(`${workingUrl}/api/tags`);
       if (response.ok) {
         const data = await response.json();
         return data.models?.map((model: any) => model.name) || [];
@@ -221,34 +313,465 @@ export class OllamaProvider implements AIProvider {
   }
 }
 
-// Ollama 雲端提供者
-export class OllamaCloudProvider implements AIProvider {
-  name = 'Ollama (llama2:7b)';
+// Ollama 本地提供者 - gpt-oss:20b
+export class OllamaGptOss20bProvider implements AIProvider {
+  name = 'Ollama local (gpt-oss:20b)';
   type = 'ollama' as const;
-  isLocal = false;
+  isLocal = true;
+
+  // 智能選擇可用的 URL
+  private async getWorkingUrl(): Promise<string> {
+    // 檢查是否為線上環境（通過檢查當前域名）
+    const isOnline = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    
+    let urls: string[];
+    if (isOnline) {
+      // 線上環境：優先使用雲端服務
+      urls = [
+        OLLAMA_CONFIG.CLOUD_URL,                    // 1. 雲端 Ollama (優先)
+        `${OLLAMA_CONFIG.CORS_PROXY_URL}${encodeURIComponent(OLLAMA_CONFIG.CLOUD_URL)}`, // 2. CORS 代理
+        OLLAMA_CONFIG.BASE_URL,                     // 3. 環境變數指定的 URL
+      ];
+    } else {
+      // 本地環境：優先使用本地服務
+      urls = [
+        OLLAMA_CONFIG.LOCAL_URL,                    // 1. 本地 Ollama (優先)
+        OLLAMA_CONFIG.BASE_URL,                     // 2. 環境變數指定的 URL
+      ];
+    }
+
+    for (const url of urls) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        console.log(`🔍 測試 Ollama URL: ${url}`);
+        
+        const response = await fetch(`${url}/api/tags`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          console.log(`✅ 找到可用的 Ollama URL: ${url}`);
+          return url;
+        }
+      } catch (error) {
+        console.log(`❌ URL ${url} 不可用:`, error);
+        continue;
+      }
+    }
+    
+    throw new Error('本地 Ollama 服務不可用');
+  }
 
   isConfigured(): boolean {
-    return !!OLLAMA_CONFIG.CLOUD_URL;
+    return true; // Ollama 總是可用的（如果本地運行）
   }
 
   async isAvailable(): Promise<boolean> {
-    if (!this.isConfigured()) return false;
-    
     try {
+      const workingUrl = await this.getWorkingUrl();
+      
+      // 對於中型模型，使用較短的超時時間進行快速檢查
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8秒超時
       
-      const response = await fetch(`${OLLAMA_CONFIG.CLOUD_URL}/api/tags`, {
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      return response.ok;
+      try {
+        // 只檢查模型是否存在，不進行實際推理
+        const response = await fetch(`${workingUrl}/api/tags`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json();
+          const hasModel = data.models?.some((model: any) => model.name === 'gpt-oss:20b');
+          if (hasModel) {
+            console.log('✅ gpt-oss:20b 模型可用');
+            return true;
+          }
+        }
+        
+        console.log('❌ gpt-oss:20b 模型不可用');
+        return false;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log('⚠️ gpt-oss:20b 模型檢查超時，但模型可能可用');
+          return true; // 超時時假設模型可用，避免誤判
+        }
+        throw error;
+      }
     } catch (error) {
-      console.log('Ollama 雲端可用性檢查失敗:', error);
+      console.log('Ollama gpt-oss:20b 可用性檢查失敗:', error);
       return false;
     }
   }
+
+  async sendMessage(message: string, history: Message[]): Promise<string> {
+    try {
+      // 獲取可用的 URL
+      const workingUrl = await this.getWorkingUrl();
+      
+      const messages = [
+        { role: 'system', content: TRAVEL_SYSTEM_PROMPT },
+        ...history,
+        { role: 'user', content: message }
+      ];
+
+      // 創建 AbortController 來處理超時
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), OLLAMA_CONFIG.TIMEOUT);
+
+      const response = await fetch(`${workingUrl}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-oss:20b',
+          messages: messages,
+          stream: false,
+          options: {
+            temperature: 0.8,
+            top_p: 0.9,
+            top_k: 40,
+            repeat_penalty: 1.1,
+            num_predict: 16384,      // gpt-oss:20b 模型較大，使用更長的回應長度
+            num_ctx: 16384,          // gpt-oss:20b 模型較大，使用更長的上下文長度
+            seed: 42,
+            tfs_z: 0.7,
+            mirostat: 2,
+            mirostat_tau: 5.0,
+            mirostat_eta: 0.1,
+          }
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Ollama API 錯誤: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.message?.content || '抱歉，我無法生成回應。';
+    } catch (error) {
+      console.error('Ollama 錯誤:', error);
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          throw new Error('Ollama 回應超時，請稍後再試。建議使用 phi3:mini 等較小模型，或簡化問題。');
+        }
+        throw new Error(`Ollama 錯誤: ${error.message}`);
+      }
+      
+      throw new Error('Ollama 服務不可用，請檢查服務是否正在運行。');
+    }
+  }
+
+  async getModels(): Promise<string[]> {
+    try {
+      const workingUrl = await this.getWorkingUrl();
+      const response = await fetch(`${workingUrl}/api/tags`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.models?.map((model: any) => model.name) || [];
+      }
+      return [];
+    } catch (error) {
+      console.error('獲取 Ollama 模型失敗:', error);
+      return [];
+    }
+  }
+
+  async preloadModel(): Promise<void> {
+    try {
+      const workingUrl = await this.getWorkingUrl();
+      await fetch(`${workingUrl}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'gpt-oss:20b',
+          prompt: 'test',
+          stream: false
+        })
+      });
+    } catch (error) {
+      console.log('預載入 gpt-oss:20b 模型失敗:', error);
+    }
+  }
+}
+
+// Ollama 本地提供者 - gpt-oss:120b
+export class OllamaGptOss120bProvider implements AIProvider {
+  name = 'Ollama local (gpt-oss:120b)';
+  type = 'ollama' as const;
+  isLocal = true;
+
+  // 智能選擇可用的 URL
+  private async getWorkingUrl(): Promise<string> {
+    // 檢查是否為線上環境（通過檢查當前域名）
+    const isOnline = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+    
+    let urls: string[];
+    if (isOnline) {
+      // 線上環境：優先使用雲端服務
+      urls = [
+        OLLAMA_CONFIG.CLOUD_URL,                    // 1. 雲端 Ollama (優先)
+        `${OLLAMA_CONFIG.CORS_PROXY_URL}${encodeURIComponent(OLLAMA_CONFIG.CLOUD_URL)}`, // 2. CORS 代理
+        OLLAMA_CONFIG.BASE_URL,                     // 3. 環境變數指定的 URL
+      ];
+    } else {
+      // 本地環境：優先使用本地服務
+      urls = [
+        OLLAMA_CONFIG.LOCAL_URL,                    // 1. 本地 Ollama (優先)
+        OLLAMA_CONFIG.BASE_URL,                     // 2. 環境變數指定的 URL
+      ];
+    }
+
+    for (const url of urls) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        console.log(`🔍 測試 Ollama URL: ${url}`);
+        
+        const response = await fetch(`${url}/api/tags`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          console.log(`✅ 找到可用的 Ollama URL: ${url}`);
+          return url;
+        }
+      } catch (error) {
+        console.log(`❌ URL ${url} 不可用:`, error);
+        continue;
+      }
+    }
+    
+    throw new Error('本地 Ollama 服務不可用');
+  }
+
+  isConfigured(): boolean {
+    return true; // Ollama 總是可用的（如果本地運行）
+  }
+
+  async isAvailable(): Promise<boolean> {
+    try {
+      const workingUrl = await this.getWorkingUrl();
+      
+      // 對於大型模型，使用更短的超時時間進行快速檢查
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超時
+      
+      try {
+        // 只檢查模型是否存在，不進行實際推理
+        const response = await fetch(`${workingUrl}/api/tags`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          const data = await response.json();
+          const hasModel = data.models?.some((model: any) => model.name === 'gpt-oss:120b');
+          if (hasModel) {
+            console.log('✅ gpt-oss:120b 模型可用');
+            return true;
+          }
+        }
+        
+        console.log('❌ gpt-oss:120b 模型不可用');
+        return false;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log('⚠️ gpt-oss:120b 模型檢查超時，但模型可能可用');
+          return true; // 超時時假設模型可用，避免誤判
+        }
+        throw error;
+      }
+    } catch (error) {
+      console.log('Ollama gpt-oss:120b 可用性檢查失敗:', error);
+      return false;
+    }
+  }
+
+  async sendMessage(message: string, history: Message[]): Promise<string> {
+    try {
+      // 獲取可用的 URL
+      const workingUrl = await this.getWorkingUrl();
+      
+      const messages = [
+        { role: 'system', content: TRAVEL_SYSTEM_PROMPT },
+        ...history,
+        { role: 'user', content: message }
+      ];
+
+      // 創建 AbortController 來處理超時
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), OLLAMA_CONFIG.TIMEOUT);
+
+      const response = await fetch(`${workingUrl}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'gpt-oss:120b',
+          messages: messages,
+          stream: false,
+          options: {
+            temperature: 0.8,
+            top_p: 0.9,
+            top_k: 40,
+            repeat_penalty: 1.1,
+            num_predict: 16384,      // gpt-oss:120b 模型較大，使用更長的回應長度
+            num_ctx: 16384,          // gpt-oss:120b 模型較大，使用更長的上下文長度
+            seed: 42,
+            tfs_z: 0.7,
+            mirostat: 2,
+            mirostat_tau: 5.0,
+            mirostat_eta: 0.1,
+          }
+        }),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`Ollama API 錯誤: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.message?.content || '抱歉，我無法生成回應。';
+    } catch (error) {
+      console.error('Ollama 錯誤:', error);
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          throw new Error('Ollama 回應超時，請稍後再試。建議使用 phi3:mini 等較小模型，或簡化問題。');
+        }
+        throw new Error(`Ollama 錯誤: ${error.message}`);
+      }
+      
+      throw new Error('Ollama 服務不可用，請檢查服務是否正在運行。');
+    }
+  }
+
+  async getModels(): Promise<string[]> {
+    try {
+      const workingUrl = await this.getWorkingUrl();
+      const response = await fetch(`${workingUrl}/api/tags`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.models?.map((model: any) => model.name) || [];
+      }
+      return [];
+    } catch (error) {
+      console.error('獲取 Ollama 模型失敗:', error);
+      return [];
+    }
+  }
+
+  async preloadModel(): Promise<void> {
+    try {
+      const workingUrl = await this.getWorkingUrl();
+      await fetch(`${workingUrl}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'gpt-oss:120b',
+          prompt: 'test',
+          stream: false
+        })
+      });
+    } catch (error) {
+      console.log('預載入 gpt-oss:120b 模型失敗:', error);
+    }
+  }
+}
+
+        // Ollama 雲端提供者 (使用 llama2:7b 模型)
+        export class OllamaCloudProvider implements AIProvider {
+          name = 'Ollama 雲端 (llama2:7b)';
+          type = 'ollama' as const;
+          isLocal = false;
+
+  // 智能選擇可用的雲端 URL
+  private async getWorkingUrl(): Promise<string> {
+    const urls = [
+      OLLAMA_CONFIG.CLOUD_URL,                    // 1. 直接雲端 URL
+      `${OLLAMA_CONFIG.CORS_PROXY_URL}${encodeURIComponent(OLLAMA_CONFIG.CLOUD_URL)}`  // 2. CORS 代理
+    ];
+
+    for (const url of urls) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+        
+        console.log(`🔍 測試雲端 Ollama URL: ${url}`);
+        
+        const response = await fetch(`${url}/api/tags`, {
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          console.log(`✅ 找到可用的雲端 Ollama URL: ${url}`);
+          return url;
+        }
+      } catch (error) {
+        console.log(`❌ 雲端 URL ${url} 不可用:`, error);
+        continue;
+      }
+    }
+    
+    throw new Error('所有雲端 Ollama URL 都不可用');
+  }
+
+  isConfigured(): boolean {
+    return true; // 雲端服務總是可用的
+  }
+
+  // 將 messages 格式轉換為 prompt 格式 (適用於舊版 Ollama)
+  private formatMessagesToPrompt(messages: Message[]): string {
+    return messages.map(msg => {
+      if (msg.role === 'system') {
+        return `[INST] <<SYS>>\n${msg.content}\n<</SYS>>\n\n`;
+      } else if (msg.role === 'user') {
+        return `${msg.content} [/INST]`;
+      } else if (msg.role === 'assistant') {
+        return `${msg.content}\n\n[INST] `;
+      }
+      return '';
+    }).join('') + '請回答：';
+  }
+
+            async isAvailable(): Promise<boolean> {
+            try {
+              const workingUrl = await this.getWorkingUrl();
+              const response = await fetch(`${workingUrl}/api/tags`);
+              if (response.ok) {
+                const data = await response.json();
+                return data.models && data.models.some((model: any) => model.name === 'llama2:7b');
+              }
+              return false;
+            } catch (error) {
+              console.log('Ollama 雲端服務檢查失敗:', error);
+              return false;
+            }
+          }
 
   async sendMessage(message: string, history: Message[]): Promise<string> {
     if (!this.isConfigured()) {
@@ -256,29 +779,36 @@ export class OllamaCloudProvider implements AIProvider {
     }
 
     try {
-      const messages = [
+      // 獲取可用的雲端 URL
+      const workingUrl = await this.getWorkingUrl();
+      
+      const messages: Message[] = [
         { role: 'system', content: TRAVEL_SYSTEM_PROMPT },
         ...history,
         { role: 'user', content: message }
       ];
 
-      const response = await fetch(`${OLLAMA_CONFIG.CLOUD_URL}/api/chat`, {
+      const response = await fetch(`${workingUrl}/api/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: OLLAMA_CONFIG.DEFAULT_MODEL,
-          messages: messages,
+                          model: 'llama2:7b',
+          prompt: this.formatMessagesToPrompt(messages),
           stream: false,
           options: {
-            temperature: 0.7,
-            top_p: 0.9,
-            top_k: 40,
-            repeat_penalty: 1.1,
-            num_predict: 8192, // 大幅增加回應長度限制，支持超長詳細回答
-            num_ctx: 8192,     // 大幅增加上下文長度，支持完整對話
-            seed: 42,          // 固定種子以增加一致性
+            temperature: 0.8,        // 稍微增加創造性
+            top_p: 0.9,             // 保持多樣性
+            top_k: 40,              // 保持選擇範圍
+            repeat_penalty: 1.1,    // 避免重複
+                               num_predict: 8192,      // llama2:7b 模型，使用較長的回應長度
+                   num_ctx: 8192,          // llama2:7b 模型，使用較長的上下文長度
+            seed: 42,               // 固定種子以增加一致性
+            tfs_z: 0.7,            // 減少無關內容
+            mirostat: 2,            // 使用 mirostat 2.0 進行更好的控制
+            mirostat_tau: 5.0,     // 目標熵值
+            mirostat_eta: 0.1,     // 學習率
           }
         }),
         signal: AbortSignal.timeout(OLLAMA_CONFIG.TIMEOUT)
@@ -289,7 +819,7 @@ export class OllamaCloudProvider implements AIProvider {
       }
 
       const data = await response.json();
-      return data.message?.content || '抱歉，我無法生成回應。';
+      return data.response || '抱歉，我無法生成回應。';
     } catch (error) {
       console.error('Ollama 雲端錯誤:', error);
       throw new Error('Ollama 雲端服務不可用，請稍後再試。');
@@ -300,7 +830,10 @@ export class OllamaCloudProvider implements AIProvider {
     if (!this.isConfigured()) return [];
     
     try {
-      const response = await fetch(`${OLLAMA_CONFIG.CLOUD_URL}/api/tags`);
+      // 獲取可用的雲端 URL
+      const workingUrl = await this.getWorkingUrl();
+      
+      const response = await fetch(`${workingUrl}/api/tags`);
       if (response.ok) {
         const data = await response.json();
         return data.models?.map((model: any) => model.name) || [];
@@ -424,16 +957,18 @@ export class OpenAIOSSProvider implements AIProvider {
   isLocal = false;
 
   isConfigured(): boolean {
-    return !!OPENAI_OSS_CONFIG.API_KEY;
+    // 始終顯示 OpenAI OSS 選項，即使沒有 API Key
+    return true;
   }
 
   async isAvailable(): Promise<boolean> {
-    return this.isConfigured();
+    // 檢查是否有 API Key
+    return !!OPENAI_OSS_CONFIG.API_KEY;
   }
 
   async sendMessage(message: string, history: Message[]): Promise<string> {
-    if (!this.isConfigured()) {
-      throw new Error('OpenAI API Key 未設置');
+    if (!OPENAI_OSS_CONFIG.API_KEY) {
+      throw new Error('OpenAI API Key 未設置，請在環境變數中設置 VITE_OPENAI_API_KEY');
     }
 
     try {
@@ -522,9 +1057,10 @@ export class MockProvider implements AIProvider {
 // 提供者管理器
 export class AIProviderManager {
   private providers: AIProvider[] = [
-    new OllamaProvider(),
-    new OllamaCloudProvider(),
-    new OpenAIOSSProvider(),
+    new OllamaProvider(),           // phi3:mini (本地)
+    new OllamaGptOss20bProvider(), // gpt-oss:20b (本地)
+    new OllamaGptOss120bProvider(), // gpt-oss:120b (本地)
+    new OllamaCloudProvider(),      // phi3:mini (雲端)
     new MockProvider(),
   ];
 
@@ -569,28 +1105,15 @@ export class AIProviderManager {
   }
 
   async getDefaultProvider(): Promise<AIProvider> {
-    // 優先使用雲端 Ollama，其次是本地 Ollama，最後是其他服務
+    // 優先使用本地 Ollama，其次是雲端 Ollama，最後是模擬回應
     const available = this.getAvailableProviders();
     
-    // 優先檢查雲端 Ollama (llama2:7b)
-    const cloudOllama = available.find(p => p.type === 'ollama' && !p.isLocal);
-    if (cloudOllama && cloudOllama.isAvailable) {
-      try {
-        if (await cloudOllama.isAvailable()) {
-          console.log('選擇雲端 Ollama (llama2:7b) 作為默認提供者');
-          return cloudOllama;
-        }
-      } catch (error) {
-        console.log('雲端 Ollama 不可用，嘗試其他提供者');
-      }
-    }
-    
-    // 檢查本地 Ollama (llama2:7b)
+    // 優先檢查本地 Ollama (phi3:mini)
     const localOllama = available.find(p => p.type === 'ollama' && p.isLocal);
     if (localOllama && localOllama.isAvailable) {
       try {
         if (await localOllama.isAvailable()) {
-          console.log('選擇本地 Ollama (llama2:7b) 作為默認提供者');
+          console.log('選擇本地 Ollama 作為默認提供者');
           return localOllama;
         }
       } catch (error) {
@@ -598,16 +1121,31 @@ export class AIProviderManager {
       }
     }
     
-    // 檢查 OpenAI
-    const openai = available.find(p => p.type === 'openai');
-    if (openai && openai.isAvailable) {
+    // 檢查其他本地 Ollama 模型
+    const otherLocalOllama = available.filter(p => p.type === 'ollama' && p.isLocal);
+    for (const provider of otherLocalOllama) {
+      if (provider.isAvailable) {
+        try {
+          if (await provider.isAvailable()) {
+            console.log(`選擇本地 Ollama (${provider.name}) 作為默認提供者`);
+            return provider;
+          }
+        } catch (error) {
+          console.log(`${provider.name} 不可用，嘗試其他提供者`);
+        }
+      }
+    }
+    
+    // 檢查雲端 Ollama
+    const cloudOllama = available.find(p => p.type === 'ollama' && !p.isLocal);
+    if (cloudOllama && cloudOllama.isAvailable) {
       try {
-        if (await openai.isAvailable()) {
-          console.log('選擇 OpenAI 作為默認提供者');
-          return openai;
+        if (await cloudOllama.isAvailable()) {
+          console.log('選擇雲端 Ollama 作為默認提供者');
+          return cloudOllama;
         }
       } catch (error) {
-        console.log('OpenAI 不可用，使用模擬回應');
+        console.log('雲端 Ollama 不可用，使用模擬回應');
       }
     }
     

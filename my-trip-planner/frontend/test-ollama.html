@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama 連接測試</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { color: green; }
+        .error { color: red; }
+        button { padding: 10px 20px; margin: 5px; }
+        #output { white-space: pre-wrap; background: #f5f5f5; padding: 10px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Ollama 連接測試</h1>
+    
+    <div class="test-section">
+        <h3>1. 檢查 Ollama 服務狀態</h3>
+        <button onclick="checkOllamaStatus()">檢查服務狀態</button>
+        <div id="status-output"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. 檢查可用模型</h3>
+        <button onclick="checkModels()">檢查模型列表</button>
+        <div id="models-output"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. 測試簡單對話</h3>
+        <button onclick="testSimpleChat()">測試對話</button>
+        <div id="chat-output"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. 詳細日誌</h3>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const OLLAMA_URL = 'https://ollama-ai-travel.onrender.com';
+        
+        function log(message) {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            output.textContent += `[${timestamp}] ${message}\n`;
+            console.log(message);
+        }
+        
+        async function checkOllamaStatus() {
+            log('🔍 檢查 Ollama 服務狀態...');
+            const output = document.getElementById('status-output');
+            
+            try {
+                const response = await fetch(`${OLLAMA_URL}/api/tags`);
+                log(`✅ 服務響應: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    output.innerHTML = `<span class="success">✅ 服務正常運行</span><br>模型數量: ${data.models?.length || 0}`;
+                } else {
+                    output.innerHTML = `<span class="error">❌ 服務錯誤: ${response.status}</span>`;
+                }
+            } catch (error) {
+                log(`❌ 連接錯誤: ${error.message}`);
+                output.innerHTML = `<span class="error">❌ 連接失敗: ${error.message}</span>`;
+            }
+        }
+        
+        async function checkModels() {
+            log('🔍 檢查可用模型...');
+            const output = document.getElementById('models-output');
+            
+            try {
+                const response = await fetch(`${OLLAMA_URL}/api/tags`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    output.innerHTML = `<span class="success">✅ 模型列表獲取成功</span><br>`;
+                    if (data.models && data.models.length > 0) {
+                        data.models.forEach(model => {
+                            output.innerHTML += `- ${model.name} (${model.size} bytes)<br>`;
+                        });
+                    } else {
+                        output.innerHTML += '沒有可用的模型';
+                    }
+                } else {
+                    output.innerHTML = `<span class="error">❌ 獲取模型列表失敗</span>`;
+                }
+            } catch (error) {
+                log(`❌ 檢查模型錯誤: ${error.message}`);
+                output.innerHTML = `<span class="error">❌ 檢查失敗: ${error.message}</span>`;
+            }
+        }
+        
+        async function testSimpleChat() {
+            log('🔍 測試簡單對話...');
+            const output = document.getElementById('chat-output');
+            
+            try {
+                const response = await fetch(`${OLLAMA_URL}/api/generate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'llama2:7b',
+                        prompt: '你好，請簡單介紹一下台北',
+                        stream: false
+                    })
+                });
+                
+                log(`✅ 對話響應: ${response.status} ${response.statusText}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    output.innerHTML = `<span class="success">✅ 對話成功</span><br>回應: ${data.response || '無回應'}`;
+                } else {
+                    const errorText = await response.text();
+                    log(`❌ 對話錯誤: ${errorText}`);
+                    output.innerHTML = `<span class="error">❌ 對話失敗: ${response.status}</span>`;
+                }
+            } catch (error) {
+                log(`❌ 對話錯誤: ${error.message}`);
+                output.innerHTML = `<span class="error">❌ 對話失敗: ${error.message}</span>`;
+            }
+        }
+        
+        // 頁面加載時自動檢查狀態
+        window.onload = function() {
+            log('🚀 頁面加載完成，開始測試...');
+            checkOllamaStatus();
+        };
+    </script>
+</body>
+</html>
