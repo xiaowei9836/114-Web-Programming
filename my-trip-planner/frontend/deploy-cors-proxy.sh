@@ -1,38 +1,54 @@
 #!/bin/bash
 
-echo "🚀 部署 CORS 代理到 Render..."
+echo "🚀 部署 CORS 代理服务到 Render..."
 
-# 檢查是否已安裝 Render CLI
+# 检查是否安装了 Render CLI
 if ! command -v render &> /dev/null; then
-    echo "❌ Render CLI 未安裝，請先安裝："
+    echo "❌ Render CLI 未安装，请先安装："
     echo "   brew install render"
-    echo "   或者訪問 https://render.com/docs/cli"
     exit 1
 fi
 
-# 檢查是否已登入 Render
-if ! render whoami &> /dev/null; then
-    echo "❌ 未登入 Render，請先登入："
-    echo "   render login"
-    exit 1
-fi
+# 创建临时部署目录
+TEMP_DIR="temp-cors-proxy-deploy"
+mkdir -p $TEMP_DIR
 
-echo "✅ 已登入 Render"
+# 复制必要文件
+cp cors-proxy.js $TEMP_DIR/
+cp cors-proxy-package.json $TEMP_DIR/package.json
 
-# 創建 Render 服務
-echo "📡 創建 CORS 代理服務..."
-render service create --name cors-proxy-ollama --type web --env node --plan free --build-command "npm install" --start-command "node cors-proxy.js" --auto-deploy
+# 创建 render.yaml 配置
+cat > $TEMP_DIR/render.yaml << 'EOF'
+services:
+  - type: web
+    name: cors-proxy-ollama
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+EOF
 
-if [ $? -eq 0 ]; then
-    echo "✅ CORS 代理服務創建成功！"
-    echo "🌐 服務將在幾分鐘內部署完成"
-    echo "📋 請訪問 Render 儀表板查看部署狀態"
-else
-    echo "❌ 服務創建失敗"
-    exit 1
-fi
+# 进入部署目录
+cd $TEMP_DIR
 
-echo ""
-echo "🎯 部署完成後，請更新前端配置中的 CORS_PROXY_URL"
-echo "   從 'https://cors-anywhere.herokuapp.com/'"
-echo "   改為 'https://cors-proxy-ollama.onrender.com/'"
+echo "📁 部署目录内容："
+ls -la
+
+echo "🔧 安装依赖..."
+npm install
+
+echo "🚀 部署到 Render..."
+render deploy
+
+# 清理临时目录
+cd ..
+rm -rf $TEMP_DIR
+
+echo "✅ 部署完成！"
+echo "📡 服务将在几分钟内可用"
+echo "🔗 请检查 Render 控制台获取服务 URL"

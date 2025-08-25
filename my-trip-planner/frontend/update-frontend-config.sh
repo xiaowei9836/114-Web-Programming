@@ -1,133 +1,94 @@
 #!/bin/bash
 
-# 🔧 前端配置更新腳本
-# 更新前端配置以使用線上 Ollama 服務
+echo "🔧 更新前端配置..."
 
-set -e
+# 获取用户输入的服务 URL
+echo "📡 请输入你的 CORS 代理服务 URL："
+echo "   格式: https://your-service-name.onrender.com"
+echo "   例如: https://cors-proxy-ollama.onrender.com"
+echo ""
+read -p "🌐 服务 URL: " SERVICE_URL
 
-# 顏色定義
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-echo -e "${BLUE}🔧 前端配置更新腳本${NC}"
-echo -e "${BLUE}====================${NC}\n"
-
-# 檢查 .env 文件
-if [ ! -f ".env" ]; then
-    echo -e "${RED}❌ .env 文件不存在${NC}"
-    echo -e "${YELLOW}💡 請先創建 .env 文件${NC}"
+if [ -z "$SERVICE_URL" ]; then
+    echo "❌ 服务 URL 不能为空"
     exit 1
 fi
 
-echo -e "${YELLOW}🔍 當前 .env 配置:${NC}"
-cat .env
+# 移除末尾的斜杠
+SERVICE_URL=$(echo $SERVICE_URL | sed 's/\/$//')
 
-echo ""
-
-# 獲取線上服務 URL
-echo -e "${BLUE}🌐 請輸入您的線上 Ollama 服務 URL:${NC}"
-echo -e "${YELLOW}例如: https://ollama-ai-travel.onrender.com${NC}"
-read -p "URL: " OLLAMA_URL
-
-if [ -z "$OLLAMA_URL" ]; then
-    echo -e "${RED}❌ URL 不能為空${NC}"
-    exit 1
+echo "🔍 验证服务可用性..."
+if curl -s "$SERVICE_URL/health" > /dev/null; then
+    echo "✅ 服务健康检查通过"
+else
+    echo "⚠️ 服务健康检查失败，但继续更新配置"
 fi
-
-# 移除 http:// 或 https:// 前綴以獲取域名
-DOMAIN=$(echo "$OLLAMA_URL" | sed 's|^https?://||')
-
-echo ""
-
-echo -e "${YELLOW}🔧 更新 .env 文件...${NC}"
-
-# 備份原文件
-cp .env .env.backup.$(date +%Y%m%d_%H%M%S)
-echo -e "${GREEN}✅ 已備份原 .env 文件${NC}"
-
-# 更新配置
-sed -i.bak "s|VITE_API_BASE_URL=.*|VITE_API_BASE_URL=http://localhost:5001|g" .env
-sed -i.bak "s|VITE_OLLAMA_BASE_URL=.*|VITE_OLLAMA_BASE_URL=$OLLAMA_URL|g" .env
-sed -i.bak "s|VITE_OLLAMA_MODEL=.*|VITE_OLLAMA_MODEL=gpt-oss:20b|g" .env
-
-# 添加新的配置行（如果不存在）
-if ! grep -q "VITE_OLLAMA_BASE_URL" .env; then
-    echo "VITE_OLLAMA_BASE_URL=$OLLAMA_URL" >> .env
-fi
-
-if ! grep -q "VITE_OLLAMA_MODEL" .env; then
-    echo "VITE_OLLAMA_MODEL=gpt-oss:20b" >> .env
-fi
-
-# 清理備份文件
-rm -f .env.bak
-
-echo -e "${GREEN}✅ .env 文件更新完成${NC}"
-
-echo ""
-
-echo -e "${YELLOW}🔍 更新後的 .env 配置:${NC}"
-cat .env
-
-echo ""
 
 # 更新 AI 提供者配置
-echo -e "${YELLOW}🔧 更新 AI 提供者配置...${NC}"
+echo "📝 更新 AI 提供者配置..."
+CONFIG_FILE="src/config/ai-providers.ts"
 
-# 檢查 ai-providers.ts 文件
-if [ -f "src/config/ai-providers.ts" ]; then
-    echo -e "${GREEN}✅ 找到 ai-providers.ts 文件${NC}"
+if [ -f "$CONFIG_FILE" ]; then
+    # 备份原文件
+    cp "$CONFIG_FILE" "${CONFIG_FILE}.backup"
+    echo "✅ 已备份原配置文件"
     
-    # 備份原文件
-    cp src/config/ai-providers.ts src/config/ai-providers.ts.backup.$(date +%Y%m%d_%H%M%S)
+    # 更新 CORS 代理 URL
+    sed -i.bak "s|CORS_PROXY_URL: 'https://cors-proxy-ollama.onrender.com/'|CORS_PROXY_URL: '${SERVICE_URL}/'|g" "$CONFIG_FILE"
     
-    # 更新 Ollama 配置
-    sed -i.bak "s|localhost:11434|$DOMAIN|g" src/config/ai-providers.ts
-    
-    # 清理備份文件
-    rm -f src/config/ai-providers.ts.bak
-    
-    echo -e "${GREEN}✅ ai-providers.ts 文件更新完成${NC}"
+    if [ $? -eq 0 ]; then
+        echo "✅ CORS 代理 URL 更新成功"
+        echo "🔄 从: https://cors-proxy-ollama.onrender.com/"
+        echo "🔄 到: ${SERVICE_URL}/"
+    else
+        echo "❌ 更新失败，恢复备份文件"
+        cp "${CONFIG_FILE}.backup" "$CONFIG_FILE"
+        exit 1
+    fi
 else
-    echo -e "${YELLOW}⚠️  未找到 ai-providers.ts 文件${NC}"
-fi
-
-echo ""
-
-# 構建項目
-echo -e "${YELLOW}🔨 構建項目...${NC}"
-if npm run build; then
-    echo -e "${GREEN}✅ 項目構建成功${NC}"
-else
-    echo -e "${RED}❌ 項目構建失敗${NC}"
-    echo -e "${YELLOW}💡 請檢查配置並重試${NC}"
+    echo "❌ 配置文件不存在: $CONFIG_FILE"
     exit 1
 fi
 
+# 创建环境变量文件
+echo "📝 创建环境变量文件..."
+ENV_FILE=".env.local"
+cat > "$ENV_FILE" << EOF
+# Ollama 配置
+VITE_OLLAMA_BASE_URL=${SERVICE_URL}
+VITE_OLLAMA_MODEL=llama2:7b
+
+# 其他配置
+VITE_APP_NAME=My Trip Planner
+VITE_APP_VERSION=1.0.0
+EOF
+
+echo "✅ 环境变量文件创建完成: $ENV_FILE"
+
+# 显示更新后的配置
+echo ""
+echo "📋 更新后的配置："
+echo "=================="
+echo "🌐 CORS 代理服务: $SERVICE_URL"
+echo "🤖 默认模型: llama2:7b"
+echo "📁 配置文件: $CONFIG_FILE"
+echo "🔧 环境变量: $ENV_FILE"
 echo ""
 
-# 部署建議
-echo -e "${BLUE}🚀 部署建議:${NC}"
-echo -e "   1. 將更新後的代碼推送到 GitHub"
-echo -e "   2. 在 Render 上重新部署 Ollama 服務"
-echo -e "   3. 重新部署前端應用"
-echo -e "   4. 測試 AI 旅遊顧問功能"
+# 测试配置
+echo "🧪 测试配置..."
+echo "请访问你的前端页面，检查控制台是否还有 CORS 错误"
+echo "如果一切正常，你应该能看到 Ollama 服务正常工作的日志"
 
+# 清理备份文件
 echo ""
+echo "🧹 清理临时文件..."
+rm -f "${CONFIG_FILE}.backup"
+rm -f "${CONFIG_FILE}.bak"
 
-echo -e "${GREEN}🎉 配置更新完成！${NC}"
-echo -e "${GREEN}現在可以部署到線上了！🚀${NC}"
-
+echo "✅ 配置更新完成！"
 echo ""
-
-# 測試配置
-echo -e "${YELLOW}🧪 測試線上服務連接...${NC}"
-if curl -s "$OLLAMA_URL/api/tags" > /dev/null; then
-    echo -e "${GREEN}✅ 線上服務連接正常${NC}"
-else
-    echo -e "${YELLOW}⚠️  線上服務連接失敗，可能還在部署中${NC}"
-    echo -e "${YELLOW}💡 請等待部署完成後再測試${NC}"
-fi
+echo "🎯 下一步："
+echo "1. 重新构建并部署前端"
+echo "2. 测试 AI 聊天功能"
+echo "3. 验证 llama2:7b 模型是否正常工作"

@@ -23,7 +23,7 @@ export const OLLAMA_CONFIG = {
   // 使用 CORS 代理服務來解決跨域問題
   BASE_URL: import.meta.env.VITE_OLLAMA_BASE_URL || 'https://ollama-ai-travel.onrender.com',
   // 備用 CORS 代理服務
-  CORS_PROXY_URL: 'https://one14-web-programming-1.onrender.com/',
+  CORS_PROXY_URL: 'https://cors-proxy-ollama.onrender.com/',
   // 直接 URL（可能會有 CORS 問題）
   DIRECT_URL: 'https://ollama-ai-travel.onrender.com',
   DEFAULT_MODEL: import.meta.env.VITE_OLLAMA_MODEL || 'llama2:7b', // 使用穩定可靠的模型
@@ -115,7 +115,7 @@ export class OllamaProvider implements AIProvider {
       // 線上環境：優先使用雲端服務
       urls = [
         OLLAMA_CONFIG.CLOUD_URL,                    // 1. 雲端 Ollama (優先)
-        `${OLLAMA_CONFIG.CORS_PROXY_URL}${encodeURIComponent(OLLAMA_CONFIG.CLOUD_URL)}`, // 2. CORS 代理
+        OLLAMA_CONFIG.CORS_PROXY_URL,               // 2. CORS 代理
         OLLAMA_CONFIG.BASE_URL,                     // 3. 環境變數指定的 URL
       ];
     } else {
@@ -124,7 +124,7 @@ export class OllamaProvider implements AIProvider {
         OLLAMA_CONFIG.LOCAL_URL,                    // 1. 本地 Ollama (優先)
         OLLAMA_CONFIG.BASE_URL,                     // 2. 環境變數指定的 URL
         OLLAMA_CONFIG.CLOUD_URL,                    // 3. 雲端 Ollama
-        `${OLLAMA_CONFIG.CORS_PROXY_URL}${encodeURIComponent(OLLAMA_CONFIG.CLOUD_URL)}`  // 4. CORS 代理
+        OLLAMA_CONFIG.CORS_PROXY_URL                // 4. CORS 代理
       ];
     }
 
@@ -329,7 +329,7 @@ export class OllamaGptOss20bProvider implements AIProvider {
       // 線上環境：優先使用雲端服務
       urls = [
         OLLAMA_CONFIG.CLOUD_URL,                    // 1. 雲端 Ollama (優先)
-        `${OLLAMA_CONFIG.CORS_PROXY_URL}${encodeURIComponent(OLLAMA_CONFIG.CLOUD_URL)}`, // 2. CORS 代理
+        OLLAMA_CONFIG.CORS_PROXY_URL,               // 2. CORS 代理
         OLLAMA_CONFIG.BASE_URL,                     // 3. 環境變數指定的 URL
       ];
     } else {
@@ -523,7 +523,7 @@ export class OllamaGptOss120bProvider implements AIProvider {
       // 線上環境：優先使用雲端服務
       urls = [
         OLLAMA_CONFIG.CLOUD_URL,                    // 1. 雲端 Ollama (優先)
-        `${OLLAMA_CONFIG.CORS_PROXY_URL}${encodeURIComponent(OLLAMA_CONFIG.CLOUD_URL)}`, // 2. CORS 代理
+        OLLAMA_CONFIG.CORS_PROXY_URL,               // 2. CORS 代理
         OLLAMA_CONFIG.BASE_URL,                     // 3. 環境變數指定的 URL
       ];
     } else {
@@ -711,7 +711,7 @@ export class OllamaGptOss120bProvider implements AIProvider {
   private async getWorkingUrl(): Promise<string> {
     const urls = [
       OLLAMA_CONFIG.CLOUD_URL,                    // 1. 直接雲端 URL
-      `${OLLAMA_CONFIG.CORS_PROXY_URL}${encodeURIComponent(OLLAMA_CONFIG.CLOUD_URL)}`  // 2. CORS 代理
+      OLLAMA_CONFIG.CORS_PROXY_URL                // 2. CORS 代理
     ];
 
     for (const url of urls) {
