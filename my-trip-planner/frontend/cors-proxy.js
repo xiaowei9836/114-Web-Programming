@@ -1,35 +1,39 @@
-import express from 'express';
-import cors from 'cors';
-import { createProxyMiddleware } from 'http-proxy-middleware';
+const express = require('express');
+const cors = require('cors');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 10000;
 
-// 啟用 CORS
+// 启用 CORS
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// 通用代理中间件 - 处理编码的 URL
-app.use('/', createProxyMiddleware({
-  target: 'https://ollama-ai-travel.onrender.com',
+// 健康检查端点
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    message: 'Ollama CORS Proxy is running',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 测试端点
+app.get('/test', (req, res) => {
+  res.json({ 
+    message: 'CORS Proxy test endpoint',
+    cors: 'enabled',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 代理所有 Ollama API 请求
+app.use('/api', createProxyMiddleware({
+  target: 'http://localhost:11434',
   changeOrigin: true,
-  pathRewrite: {
-    '^/': '/'
-  },
-  onProxyReq: function (proxyReq, req, res) {
-    // 解码 URL 路径
-    if (req.url) {
-      try {
-        const decodedUrl = decodeURIComponent(req.url);
-        console.log(`🔄 代理请求: ${req.method} ${req.url} -> ${decodedUrl}`);
-      } catch (error) {
-        console.log(`⚠️ URL 解码失败: ${req.url}`);
-      }
-    }
-  },
   onProxyRes: function (proxyRes, req, res) {
     // 添加 CORS 头
     proxyRes.headers['Access-Control-Allow-Origin'] = '*';
@@ -48,29 +52,20 @@ app.use('/', createProxyMiddleware({
   }
 }));
 
-// 健康檢查端點
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    message: 'CORS Proxy is running',
-    target: 'https://ollama-ai-travel.onrender.com',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// 测试端点
-app.get('/test', (req, res) => {
-  res.json({ 
-    message: 'CORS Proxy test endpoint',
-    cors: 'enabled',
-    timestamp: new Date().toISOString()
-  });
-});
-
+// 启动服务器
 app.listen(PORT, () => {
-  console.log(`🚀 CORS Proxy 服務器運行在端口 ${PORT}`);
-  console.log(`📡 代理目標: https://ollama-ai-travel.onrender.com`);
-  console.log(`🌐 CORS: 已啟用，允許所有來源`);
+  console.log(`🚀 CORS 代理服务运行在端口 ${PORT}`);
+  console.log(`🌐 CORS 已启用，允许所有来源`);
+  console.log(`📡 代理目标: http://localhost:11434 (Ollama)`);
 });
 
+// 优雅关闭
+process.on('SIGTERM', () => {
+  console.log('🔄 收到 SIGTERM 信号，正在关闭服务...');
+  process.exit(0);
+});
 
+process.on('SIGINT', () => {
+  console.log('🔄 收到 SIGINT 信号，正在关闭服务...');
+  process.exit(0);
+});
