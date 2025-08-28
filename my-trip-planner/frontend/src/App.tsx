@@ -17,17 +17,24 @@ function AppContent() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <main className="container mx-auto px-4 py-8">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/trips" element={<TripList />} />
-            <Route path="/trips/:id" element={<TripDetail />} />
-            <Route path="/create" element={<CreateTrip />} />
-            <Route path="/map-planning" element={<MapPlanning />} />
-          </Routes>
-        </main>
+      <div className="min-h-screen">
+        {/* 只在非首頁顯示導航欄 */}
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="*" element={
+            <>
+              <Navbar />
+              <main className="container mx-auto px-4 py-8">
+                <Routes>
+                  <Route path="/trips" element={<TripList />} />
+                  <Route path="/trips/:id" element={<TripDetail />} />
+                  <Route path="/create" element={<CreateTrip />} />
+                  <Route path="/map-planning" element={<MapPlanning />} />
+                </Routes>
+              </main>
+            </>
+          } />
+        </Routes>
         
         {/* 全局 AI 諮詢對話框 */}
         <AIChatbot
@@ -45,11 +52,11 @@ function AppContent() {
 
 function App() {
   return (
-    <GoogleMapsLoader>
-      <AIChatProvider>
+    <AIChatProvider>
+      <GoogleMapsLoader>
         <AppContent />
-      </AIChatProvider>
-    </GoogleMapsLoader>
+      </GoogleMapsLoader>
+    </AIChatProvider>
   );
 }
 
