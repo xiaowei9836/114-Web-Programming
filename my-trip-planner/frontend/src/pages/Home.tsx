@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { MapPin, Calendar, DollarSign, BookOpen, Bell, Globe, Bot, ChevronRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { MapPin, Calendar, DollarSign, BookOpen, Bell, Globe, Bot, ChevronRight, MessageCircle } from 'lucide-react';
 import { useAIChat } from '../contexts/AIChatContext';
 
 const Home: React.FC = () => {
-  const { openChat } = useAIChat();
+  const { openChat, isMinimized } = useAIChat();
+  const navigate = useNavigate();
   const [navBackground, setNavBackground] = useState(false);
+  const [hoveredNavItem, setHoveredNavItem] = useState<string | null>(null);
   
   // 添加refs用于滚动动画
   const featuresRef = useRef<HTMLElement>(null);
@@ -19,6 +21,22 @@ const Home: React.FC = () => {
   
   // 直接使用霞鶩文楷字體
   const fontClass = 'font-["LXGW-WenKai"]';
+  
+  // 浮動小區塊內容
+  const featuresItems = [
+    { icon: <Globe className="h-4 w-4" />, text: '地圖規劃' },
+    { icon: <Calendar className="h-4 w-4" />, text: '行程安排' },
+    { icon: <DollarSign className="h-4 w-4" />, text: '預算管理' },
+    { icon: <Bell className="h-4 w-4" />, text: '旅行提醒' },
+    { icon: <BookOpen className="h-4 w-4" />, text: '旅行日記' },
+    { icon: <Bot className="h-4 w-4" />, text: 'AI諮詢' }
+  ];
+  
+  const quickStartItems = [
+    { icon: <Globe className="h-4 w-4" />, text: '地圖規劃' },
+    { icon: <Calendar className="h-4 w-4" />, text: '創建行程' },
+    { icon: <BookOpen className="h-4 w-4" />, text: '享受旅行' }
+  ];
   
   const features = [
     {
@@ -139,7 +157,6 @@ const Home: React.FC = () => {
     let video2: HTMLVideoElement | null = null;
     let video3: HTMLVideoElement | null = null;
     let currentVideoIndex = 0;
-    let isPlaying = false;
 
     const initializeVideos = () => {
       video1 = document.getElementById('video1') as HTMLVideoElement;
@@ -184,7 +201,6 @@ const Home: React.FC = () => {
     const startVideoPlayback = () => {
       if (video1) {
         video1.play();
-        isPlaying = true;
       }
     };
 
@@ -245,15 +261,53 @@ const Home: React.FC = () => {
             <span className="text-[#c7a559]">Voyage</span> Planner
           </Link>
           <div className="flex items-center gap-5">
-            <a href="#features" className="px-4 py-2 rounded-full border border-white/20 hover:bg-white/10 transition-colors">
-              功能亮點
-            </a>
+            <div className="relative">
+              <a 
+                href="#features" 
+                className="px-4 py-2 rounded-full border border-white/20 hover:bg-white/10 transition-colors"
+                onMouseEnter={() => setHoveredNavItem('features')}
+                onMouseLeave={() => setHoveredNavItem(null)}
+              >
+                功能亮點
+              </a>
+              {hoveredNavItem === 'features' && (
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white/70 backdrop-blur-sm border border-white/20 rounded-lg shadow-xl p-3 min-w-[250px] z-50">
+                  <div className="grid grid-cols-2 gap-2">
+                    {featuresItems.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-white/20 transition-colors">
+                        <span className="text-gray-700">{item.icon}</span>
+                        <span className="text-sm text-gray-700">{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <a href="#gallery" className="px-4 py-2 rounded-full border border-white/20 hover:bg-white/10 transition-colors">
               靈感圖集
             </a>
-            <a href="#quick-start" className="px-4 py-2 rounded-full border border-white/20 hover:bg-white/10 transition-colors">
-              快速開始
-            </a>
+            <div className="relative">
+              <a 
+                href="#quick-start" 
+                className="px-4 py-2 rounded-full border border-white/20 hover:bg-white/10 transition-colors"
+                onMouseEnter={() => setHoveredNavItem('quick-start')}
+                onMouseLeave={() => setHoveredNavItem(null)}
+              >
+                快速開始
+              </a>
+              {hoveredNavItem === 'quick-start' && (
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white/70 backdrop-blur-sm border border-white/20 rounded-lg shadow-xl p-3 min-w-[125px] z-50">
+                  <div className="space-y-2">
+                    {quickStartItems.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-white/20 transition-colors">
+                        <span className="text-gray-700">{item.icon}</span>
+                        <span className="text-sm text-gray-700">{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <Link to="/map-planning" className="px-4 py-3 rounded-full bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold hover:shadow-2xl hover:-translate-y-0.5 transition-all">
               立即規劃
             </Link>
@@ -569,7 +623,7 @@ const Home: React.FC = () => {
               : 'opacity-0 translate-y-12 scale-95'
           }`}>
             <button
-              onClick={openChat}
+              onClick={() => navigate('/map-planning')}
               className="inline-flex items-center gap-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold px-8 py-4 rounded-full text-lg transition-all duration-300 transform hover:scale-105 hover:shadow-2xl"
             >
               免費開始規劃
@@ -578,6 +632,17 @@ const Home: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* AI旅遊顧問浮動按鈕 - 只在未最小化時顯示 */}
+      {!isMinimized && (
+        <button
+          onClick={openChat}
+          className="fixed bottom-6 right-6 z-50 w-16 h-16 bg-gradient-to-r from-[#c7a559] to-[#efc56a] hover:from-[#b8954f] hover:to-[#d4b05a] text-[#162022] rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center group"
+          title="AI旅遊顧問"
+        >
+          <MessageCircle className="h-8 w-8 group-hover:scale-110 transition-transform duration-300" />
+        </button>
+      )}
 
       {/* 頁腳 */}
       <footer className="w-full border-t border-[#1e2a36] py-12">

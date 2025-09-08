@@ -1,6 +1,7 @@
 
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
+import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import TripList from './pages/TripList';
 import TripDetail from './pages/TripDetail';
@@ -17,6 +18,7 @@ function AppContent() {
 
   return (
     <Router>
+      <ScrollToTop />
       <div className="min-h-screen">
         {/* 只在非首頁顯示導航欄 */}
         <Routes>

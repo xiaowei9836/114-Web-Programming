@@ -438,7 +438,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
 
   if (isMinimized || windowState === 'minimized') {
     return (
-      <div className={`fixed bottom-4 right-4 z-50 ${className}`}>
+      <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
         <button
           onClick={() => {
             if (onMinimize) {
@@ -447,10 +447,10 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
               setWindowState('normal');
             }
           }}
-          className="bg-indigo-600 text-white p-3 rounded-full shadow-lg hover:bg-indigo-700 transition-colors"
+          className="w-16 h-16 bg-gradient-to-r from-[#c7a559] to-[#efc56a] hover:from-[#b8954f] hover:to-[#d4b05a] text-[#162022] rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center group"
           title="展開AI諮詢"
         >
-          <Maximize2 className="h-6 w-6" />
+          <Maximize2 className="h-8 w-8 group-hover:scale-110 transition-transform duration-300" />
         </button>
       </div>
     );
@@ -503,10 +503,10 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
           </button>
           <button
             onClick={handleMinimize}
-            className="text-white hover:text-indigo-200 transition-colors p-1 rounded"
+            className="text-white hover:text-indigo-200 transition-colors p-1 rounded flex items-center justify-center"
             title="最小化"
           >
-            <Minimize2 className="h-4 w-4" />
+            <span className="text-lg font-bold leading-none">_</span>
           </button>
           <button
             onClick={onToggle}
@@ -520,18 +520,32 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
 
       {/* 訊息區域 */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
+        {messages.map((message, index) => {
+          // 計算動畫延遲：初始訊息有延遲，新訊息立即顯示
+          const isInitialMessage = index === 0 && messages.length === 1;
+          const animationDelay = isInitialMessage ? `${index * 0.2}s` : '0s';
+          const bubbleDelay = isInitialMessage ? `${index * 0.2 + 0.1}s` : '0.1s';
+          
+          return (
             <div
-              className={`max-w-[80%] p-3 rounded-lg ${
-                message.type === 'user'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white text-gray-800 border border-gray-200'
-              }`}
+              key={message.id}
+              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+              style={{
+                animationDelay: animationDelay,
+                animationFillMode: 'both'
+              }}
             >
+              <div
+                className={`max-w-[80%] p-3 rounded-lg animate-slide-up ${
+                  message.type === 'user'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white text-gray-800 border border-gray-200'
+                }`}
+                style={{
+                  animationDelay: bubbleDelay,
+                  animationFillMode: 'both'
+                }}
+              >
               {message.type === 'assistant' ? (
                 <MarkdownRenderer content={message.content} />
               ) : (
@@ -547,14 +561,15 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
         
         {isLoading && (
-          <div className="flex justify-start">
-            <div className="bg-white text-gray-800 border border-gray-200 p-3 rounded-lg">
+          <div className="flex justify-start animate-fade-in">
+            <div className="bg-white text-gray-800 border border-gray-200 p-3 rounded-lg animate-slide-up">
               <div className="flex items-center space-x-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
-                <span className="text-sm text-gray-600 text-left">
+                <span className="text-sm text-gray-600 text-left animate-pulse">
                   {currentProvider ? `${currentProvider.name}正在思考中...` : 'AI正在思考中...'}
                 </span>
               </div>
