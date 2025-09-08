@@ -327,6 +327,33 @@ const MapPlanning: React.FC = () => {
     return summary;
   };
 
+  // 生成當前路線顯示
+  const generateCurrentRoute = () => {
+    if (tripPoints.length === 0) return null;
+    
+    return (
+      <div className="mt-4 p-4 bg-gray-600 rounded-lg">
+        <h4 className="text-sm font-semibold text-[#e9eef2] mb-3">當前路線順序：</h4>
+        <div className="space-y-2">
+          {tripPoints.map((point, index) => (
+            <div key={point.id} className="flex items-center space-x-3">
+              <span className="bg-[#3fb6b2] text-white text-xs font-medium px-2 py-1 rounded-full w-6 h-6 flex items-center justify-center">
+                {index + 1}
+              </span>
+              <div className="flex-1">
+                <div className="text-sm font-medium text-[#e9eef2]">{point.location.name}</div>
+                {point.location.address && (
+                  <div className="text-xs text-[#a9b6c3]">{point.location.address}</div>
+                )}
+              </div>
+              <span className="text-red-500 text-sm" title="地圖標記">📍</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
 
 
   // 從雲端獲取已保存的行程
@@ -732,6 +759,8 @@ const MapPlanning: React.FC = () => {
                     </p>
                   )}
                 </div>
+                {/* 當前路線顯示 */}
+                {tripPoints.length > 0 && generateCurrentRoute()}
                 <div className="flex space-x-3">
                   <button
                     onClick={handleSaveTrip}
