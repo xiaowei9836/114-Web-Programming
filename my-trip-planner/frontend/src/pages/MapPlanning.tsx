@@ -72,6 +72,9 @@ const MapPlanning: React.FC = () => {
   const searchTimeoutRef = useRef<number>();
   const mapRef = useRef<GoogleMapRef>(null);
   
+  // 後端 API 端點配置
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+  
   // 直接使用霞鶩文楷字體
   const fontClass = 'font-["LXGW-WenKai"]';
 
@@ -203,70 +206,93 @@ const MapPlanning: React.FC = () => {
     setTripPoints(prev => prev.filter(point => point.id !== id));
   };
 
-  // 保存行程功能 - 在畫面上顯示行程數據並持久化保存
-  const handleSaveTrip = () => {
+  // 保存行程功能 - 保存到雲端數據庫
+  const handleSaveTrip = async () => {
     if (tripPoints.length === 0) {
       alert('請先添加至少一個地點才能保存行程');
       return;
     }
 
-    // 收集行程數據
-    const tripData: TripData = {
-      id: generateStableId(),
-      name: `我的行程 - ${new Date().toLocaleDateString('zh-TW')}`,
-      title: `我的行程 - ${new Date().toLocaleDateString('zh-TW')}`,
-      createdAt: new Date().toISOString(),
-      totalPoints: tripPoints.length,
-      totalEstimatedCost: tripPoints
-        .filter(p => p.estimatedCost)
-        .reduce((sum, p) => sum + (p.estimatedCost || 0), 0),
-      totalEstimatedTime: tripPoints
-        .filter(p => p.estimatedTime)
-        .reduce((sum, p) => sum + (p.estimatedTime || 0), 0),
-      points: tripPoints.map((point, index) => ({
-        order: index + 1,
-        name: point.location.name,
-        address: point.location.address,
-        coordinates: {
-          lat: point.location.lat,
-          lng: point.location.lng
-        },
-        estimatedCost: point.estimatedCost,
-        estimatedTime: point.estimatedTime,
-        notes: point.notes
-      }))
+    const tripData = {
+      title: `地圖行程 - ${new Date().toLocaleDateString('zh-TW')}`,
+      destination: tripPoints.map(p => p.location.name).join(', '),
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date().toISOString().split('T')[0],
+      description: `包含 ${tripPoints.length} 個地點的地圖行程`,
+      budget: {
+        total: tripPoints
+          .filter(p => p.estimatedCost)
+          .reduce((sum, p) => sum + (p.estimatedCost || 0), 0),
+        spent: 0,
+        currency: 'NTD'
+      },
+      // 添加地圖行程特有的數據
+      mapTripData: {
+        id: generateStableId(),
+        createdAt: new Date().toISOString(),
+        totalPoints: tripPoints.length,
+        totalEstimatedCost: tripPoints
+          .filter(p => p.estimatedCost)
+          .reduce((sum, p) => sum + (p.estimatedCost || 0), 0),
+        totalEstimatedTime: tripPoints
+          .filter(p => p.estimatedTime)
+          .reduce((sum, p) => sum + (p.estimatedTime || 0), 0),
+        points: tripPoints.map((point, index) => ({
+          order: index + 1,
+          name: point.location.name,
+          address: point.location.address,
+          coordinates: {
+            lat: point.location.lat,
+            lng: point.location.lng
+          },
+          estimatedCost: point.estimatedCost,
+          estimatedTime: point.estimatedTime,
+          notes: point.notes
+        }))
+      }
     };
 
-    // 創建行程摘要
-    const tripSummary = generateTripSummary(tripData);
-    
-    // 保存到多個行程列表中
-    setSavedTrips(prev => {
-      const newTrips = [...prev, tripData];
-      // 限制保存的行程數量（最多保存10個）
-      if (newTrips.length > 10) {
-        newTrips.splice(0, newTrips.length - 10);
-      }
-      return newTrips;
-    });
-    
-    // 在畫面上顯示行程數據
-    setSavedTripData(tripData);
-    setSavedTripSummary(tripSummary);
-    setShowSavedTrip(true);
-    
-    // 保存到 localStorage 以持久化
     try {
-      const existingTrips = JSON.parse(localStorage.getItem('savedTrips') || '[]');
-      const newTrips = [...existingTrips, tripData];
-      // 限制保存的行程數量（最多保存10個）
-      if (newTrips.length > 10) {
-        newTrips.splice(0, newTrips.length - 10);
+      const response = await fetch(`${API_BASE_URL}/api/trips`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(tripData),
+      });
+
+      if (response.ok) {
+        const savedTrip = await response.json();
+        console.log('MapPlanning: 行程已保存到雲端數據庫');
+        
+        // 更新本地狀態
+        const localTripData: TripData = {
+          id: savedTrip._id,
+          name: savedTrip.title,
+          title: savedTrip.title,
+          createdAt: savedTrip.createdAt,
+          totalPoints: tripData.mapTripData.totalPoints,
+          totalEstimatedCost: tripData.mapTripData.totalEstimatedCost,
+          totalEstimatedTime: tripData.mapTripData.totalEstimatedTime,
+          points: tripData.mapTripData.points
+        };
+        
+        // 創建行程摘要
+        const tripSummary = generateTripSummary(localTripData);
+        
+        // 在畫面上顯示行程數據
+        setSavedTripData(localTripData);
+        setSavedTripSummary(tripSummary);
+        setShowSavedTrip(true);
+        
+        // 重新載入已保存的行程列表
+        fetchSavedTrips();
+      } else {
+        throw new Error(`保存失敗: ${response.statusText}`);
       }
-      localStorage.setItem('savedTrips', JSON.stringify(newTrips));
-      console.log('MapPlanning: 行程已保存到 localStorage');
     } catch (error) {
-      console.error('MapPlanning: 保存到 localStorage 失敗:', error);
+      console.error('MapPlanning: 保存行程失敗:', error);
+      alert('保存行程失敗，請稍後再試');
     }
   };
 
@@ -303,15 +329,46 @@ const MapPlanning: React.FC = () => {
 
 
 
-  // 在頁面載入時恢復保存的行程數據
-  useEffect(() => {
+  // 從雲端獲取已保存的行程
+  const fetchSavedTrips = async () => {
     try {
-      const savedTripsData = JSON.parse(localStorage.getItem('savedTrips') || '[]');
-      setSavedTrips(savedTripsData);
-      console.log('MapPlanning: 已恢復保存的行程數據');
+      const response = await fetch(`${API_BASE_URL}/api/trips`);
+      if (response.ok) {
+        const trips = await response.json();
+        // 只顯示有mapTripData的行程（地圖行程）
+        const mapTrips = trips
+          .filter((trip: any) => trip.mapTripData)
+          .map((trip: any) => ({
+            id: trip._id,
+            name: trip.title,
+            title: trip.title,
+            createdAt: trip.createdAt,
+            totalPoints: trip.mapTripData.totalPoints,
+            totalEstimatedCost: trip.mapTripData.totalEstimatedCost,
+            totalEstimatedTime: trip.mapTripData.totalEstimatedTime,
+            points: trip.mapTripData.points
+          }));
+        setSavedTrips(mapTrips);
+        console.log('MapPlanning: 已從雲端載入地圖行程數據');
+      } else {
+        throw new Error(`載入失敗: ${response.statusText}`);
+      }
     } catch (error) {
-      console.error('MapPlanning: 恢復保存的行程數據失敗:', error);
+      console.error('MapPlanning: 載入地圖行程失敗:', error);
+      // 如果雲端載入失敗，嘗試從localStorage載入
+      try {
+        const savedTripsData = JSON.parse(localStorage.getItem('savedTrips') || '[]');
+        setSavedTrips(savedTripsData);
+        console.log('MapPlanning: 已從localStorage恢復保存的行程數據');
+      } catch (localError) {
+        console.error('MapPlanning: 從localStorage恢復失敗:', localError);
+      }
     }
+  };
+
+  // 在頁面載入時獲取已保存的行程數據
+  useEffect(() => {
+    fetchSavedTrips();
   }, []);
 
   // 清理超時
@@ -708,15 +765,25 @@ const MapPlanning: React.FC = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-[#e9eef2]">已保存的行程</h3>
                   <button
-                    onClick={() => {
-                      setSavedTrips([]);
-                      setShowSavedTrip(false);
-                      // 清除 localStorage 中的保存數據
-                      try {
-                        localStorage.removeItem('savedTrips');
-                        console.log('MapPlanning: 已清除所有保存的行程數據');
-                      } catch (error) {
-                        console.error('MapPlanning: 清除保存的行程數據失敗:', error);
+                    onClick={async () => {
+                      if (window.confirm('確定要刪除所有已保存的地圖行程嗎？')) {
+                        try {
+                          // 批量刪除所有地圖行程
+                          const deletePromises = savedTrips.map(trip => 
+                            fetch(`${API_BASE_URL}/api/trips/${trip.id}`, {
+                              method: 'DELETE',
+                            })
+                          );
+                          
+                          await Promise.all(deletePromises);
+                          
+                          setSavedTrips([]);
+                          setShowSavedTrip(false);
+                          console.log('MapPlanning: 已清除所有保存的地圖行程');
+                        } catch (error) {
+                          console.error('MapPlanning: 清除地圖行程失敗:', error);
+                          alert('清除行程失敗，請稍後再試');
+                        }
                       }
                     }}
                     className="text-blue-400 hover:text-blue-300 text-sm font-medium"
@@ -732,16 +799,22 @@ const MapPlanning: React.FC = () => {
                           行程 {index + 1} 保存於：{new Date(trip.createdAt).toLocaleString('zh-TW')}
                         </h4>
                         <button
-                          onClick={() => {
-                            setSavedTrips(prev => prev.filter(t => t.id !== trip.id));
-                            // 從 localStorage 中移除特定行程
+                          onClick={async () => {
                             try {
-                              const existingTrips = JSON.parse(localStorage.getItem('savedTrips') || '[]');
-                              const updatedTrips = existingTrips.filter((t: TripData) => t.id !== trip.id);
-                              localStorage.setItem('savedTrips', JSON.stringify(updatedTrips));
-                              console.log('MapPlanning: 已移除行程:', trip.id);
+                              const response = await fetch(`${API_BASE_URL}/api/trips/${trip.id}`, {
+                                method: 'DELETE',
+                              });
+                              
+                              if (response.ok) {
+                                console.log('MapPlanning: 已從雲端刪除行程:', trip.id);
+                                // 重新載入已保存的行程列表
+                                fetchSavedTrips();
+                              } else {
+                                throw new Error(`刪除失敗: ${response.statusText}`);
+                              }
                             } catch (error) {
-                              console.error('MapPlanning: 移除行程失敗:', error);
+                              console.error('MapPlanning: 刪除行程失敗:', error);
+                              alert('刪除行程失敗，請稍後再試');
                             }
                           }}
                           className="text-red-500 hover:text-red-700 text-sm"

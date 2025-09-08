@@ -5,9 +5,10 @@ import remarkGfm from 'remark-gfm';
 interface MarkdownRendererProps {
   content: string;
   className?: string;
+  fontClass?: string;
 }
 
-const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className = '' }) => {
+const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className = '', fontClass = '' }) => {
   // 預處理 Markdown 內容，修復連續表格問題
   const preprocessContent = (markdown: string): string => {
     let processed = markdown;
@@ -98,7 +99,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
 
   return (
     <div 
-      className={`markdown-content text-left ${className}`}
+      className={`markdown-content text-left ${className} ${fontClass}`}
       style={{
         textAlign: 'left',
         wordBreak: 'break-word',
@@ -124,7 +125,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
         ),
         // 自定義表格標題單元格
         th: ({ children, ...props }) => (
-          <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700 border-b border-gray-300" {...props}>
+          <th className={`px-2 py-2 text-left text-xs font-semibold text-gray-700 border-b border-gray-300 ${fontClass}`} {...props}>
             {children}
           </th>
         ),
@@ -136,61 +137,61 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
         ),
         // 自定義表格數據單元格
         td: ({ children, ...props }) => (
-          <td className="px-2 py-2 text-xs text-gray-800 border-b border-gray-200" {...props}>
+          <td className={`px-2 py-2 text-xs text-gray-800 border-b border-gray-200 ${fontClass}`} {...props}>
             {children}
           </td>
         ),
         // 自定義標題樣式
         h1: ({ children, ...props }) => (
-          <h1 className="text-lg font-bold text-gray-900 mt-3 mb-2" {...props}>
+          <h1 className={`text-lg font-bold text-gray-900 mt-3 mb-2 ${fontClass}`} {...props}>
             {children}
           </h1>
         ),
         h2: ({ children, ...props }) => (
-          <h2 className="text-base font-bold text-gray-800 mt-3 mb-2" {...props}>
+          <h2 className={`text-base font-bold text-gray-800 mt-3 mb-2 ${fontClass}`} {...props}>
             {children}
           </h2>
         ),
         h3: ({ children, ...props }) => (
-          <h3 className="text-sm font-semibold text-gray-700 mt-2 mb-1" {...props}>
+          <h3 className={`text-sm font-semibold text-gray-700 mt-2 mb-1 ${fontClass}`} {...props}>
             {children}
           </h3>
         ),
         h4: ({ children, ...props }) => (
-          <h4 className="text-sm font-semibold text-gray-600 mt-2 mb-1" {...props}>
+          <h4 className={`text-sm font-semibold text-gray-600 mt-2 mb-1 ${fontClass}`} {...props}>
             {children}
           </h4>
         ),
         // 自定義段落樣式
         p: ({ children, ...props }) => (
-          <p className="mb-2 text-gray-700 leading-relaxed text-sm text-left" {...props}>
+          <p className={`mb-2 text-gray-700 leading-relaxed text-sm text-left ${fontClass}`} {...props}>
             {children}
           </p>
         ),
         // 自定義列表樣式
         ul: ({ children, ...props }) => (
-          <ul className="list-disc list-inside mb-2 space-y-1 text-gray-700 text-sm text-left" {...props}>
+          <ul className={`list-disc list-inside mb-2 space-y-1 text-gray-700 text-sm text-left ${fontClass}`} {...props}>
             {children}
           </ul>
         ),
         ol: ({ children, ...props }) => (
-          <ol className="list-decimal list-inside mb-2 space-y-1 text-gray-700 text-sm text-left" {...props}>
+          <ol className={`list-decimal list-inside mb-2 space-y-1 text-gray-700 text-sm text-left ${fontClass}`} {...props}>
             {children}
           </ol>
         ),
         li: ({ children, ...props }) => (
-          <li className="text-gray-700 text-sm text-left" {...props}>
+          <li className={`text-gray-700 text-sm text-left ${fontClass}`} {...props}>
             {children}
           </li>
         ),
         // 自定義強調樣式
         strong: ({ children, ...props }) => (
-          <strong className="font-semibold text-gray-900" {...props}>
+          <strong className={`font-semibold text-gray-900 ${fontClass}`} {...props}>
             {children}
           </strong>
         ),
         em: ({ children, ...props }) => (
-          <em className="italic text-gray-800" {...props}>
+          <em className={`italic text-gray-800 ${fontClass}`} {...props}>
             {children}
           </em>
         ),

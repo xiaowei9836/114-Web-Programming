@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, MapPin, Calendar, DollarSign, Edit, Trash2, Bot, MessageCircle } from 'lucide-react';
+import { Plus, MapPin, Calendar, DollarSign, Edit, Trash2, MessageCircle } from 'lucide-react';
 import { useAIChat } from '../contexts/AIChatContext';
 
 interface Trip {
@@ -140,10 +140,22 @@ const TripList: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">正在載入旅行清單...</p>
+      <div className={`min-h-screen bg-black text-[#e9eef2] font-["LXGW-WenKai"]`}>
+        <div className="container mx-auto px-2 py-0">
+          <div className="mb-2">
+            <div className="relative mb-4">
+              <div className="text-center">
+                <h1 className={`text-3xl font-bold text-[#e9eef2] mb-2 font-["LXGW-WenKai"]`}>我的旅行規劃</h1>
+                <p className="text-[#a9b6c3]">管理您的旅行計劃，查看行程安排和預算狀況</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-center items-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#c7a559] mx-auto mb-4"></div>
+              <p className="text-[#a9b6c3]">正在載入旅行清單...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -151,53 +163,66 @@ const TripList: React.FC = () => {
 
   if (error && trips.length === 0) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">我的旅行</h1>
-          <Link
-            to="/create"
-            className="btn-primary inline-flex items-center space-x-2"
-          >
-            <Plus className="h-5 w-5" />
-            <span>創建旅行</span>
-          </Link>
-        </div>
+      <div className={`min-h-screen bg-black text-[#e9eef2] font-["LXGW-WenKai"]`}>
+        <div className="container mx-auto px-2 py-0">
+          <div className="mb-2">
+            <div className="relative mb-4">
+              <div className="text-center">
+                <h1 className={`text-3xl font-bold text-[#e9eef2] mb-2 font-["LXGW-WenKai"]`}>我的旅行規劃</h1>
+                <p className="text-[#a9b6c3]">管理您的旅行計劃，查看行程安排和預算狀況</p>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-6">
+            <div className="relative mb-4">
+              <div className="absolute top-0 right-0 flex items-center space-x-3">
+                <Link
+                  to="/create"
+                  className="px-4 py-2 rounded-full bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold hover:shadow-lg transition-all inline-flex items-center space-x-2"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span>創建旅行</span>
+                </Link>
+              </div>
+            </div>
         
-        <div className={`text-center py-16 rounded-lg border ${
-          error.includes('離線模式') 
-            ? 'bg-yellow-50 border-yellow-200' 
-            : 'bg-red-50 border-red-200'
-        }`}>
-          <div className={`mb-4 ${
-            error.includes('離線模式') ? 'text-yellow-600' : 'text-red-600'
-          }`}>
-            {error.includes('離線模式') ? (
-              <svg className="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            ) : (
-              <svg className="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            )}
-            <h3 className="text-xl font-semibold mb-2">
-              {error.includes('離線模式') ? '離線模式' : '載入失敗'}
-            </h3>
-            <p className={`mb-4 ${
-              error.includes('離線模式') ? 'text-yellow-700' : 'text-red-700'
+            <div className={`text-center py-16 rounded-lg border ${
+              error.includes('離線模式') 
+                ? 'bg-yellow-50 border-yellow-200' 
+                : 'bg-red-50 border-red-200'
             }`}>
-              {error}
-            </p>
-            <button 
-              onClick={fetchTrips}
-              className={`${
-                error.includes('離線模式') 
-                  ? 'bg-yellow-600 hover:bg-yellow-700' 
-                  : 'btn-primary'
-              } text-white px-4 py-2 rounded-lg transition-colors`}
-            >
-              {error.includes('離線模式') ? '重新同步' : '重試'}
-            </button>
+              <div className={`mb-4 ${
+                error.includes('離線模式') ? 'text-yellow-600' : 'text-red-600'
+              }`}>
+                {error.includes('離線模式') ? (
+                  <svg className="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                ) : (
+                  <svg className="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                )}
+                <h3 className="text-xl font-semibold mb-2">
+                  {error.includes('離線模式') ? '離線模式' : '載入失敗'}
+                </h3>
+                <p className={`mb-4 ${
+                  error.includes('離線模式') ? 'text-yellow-700' : 'text-red-700'
+                }`}>
+                  {error}
+                </p>
+                <button 
+                  onClick={fetchTrips}
+                  className={`${
+                    error.includes('離線模式') 
+                      ? 'bg-yellow-600 hover:bg-yellow-700' 
+                      : 'btn-primary'
+                  } text-white px-4 py-2 rounded-lg transition-colors`}
+                >
+                  {error.includes('離線模式') ? '重新同步' : '重試'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

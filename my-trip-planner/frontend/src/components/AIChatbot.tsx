@@ -23,6 +23,9 @@ interface AIChatbotProps {
 // 視窗狀態類型
 type WindowState = 'minimized' | 'normal' | 'maximized';
 
+// 直接使用霞鶩文楷字體
+const fontClass = 'font-["LXGW-WenKai"]';
+
 const AIChatbot: React.FC<AIChatbotProps> = ({
   isOpen,
   onToggle,
@@ -474,25 +477,25 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
     >
       {/* 標題欄 - 可拖拽 */}
       <div 
-        className="bg-indigo-600 text-white p-4 rounded-t-lg flex items-center justify-between cursor-grab active:cursor-grabbing"
+        className="bg-[#3fb6b2] text-white p-4 rounded-t-lg flex items-center justify-between cursor-grab active:cursor-grabbing"
         onMouseDown={handleMouseDown}
       >
         <div className="flex items-center space-x-2">
           <Bot className="h-5 w-5" />
-          <h3 className="font-semibold">AI旅遊顧問</h3>
+          <h3 className={`font-semibold ${fontClass}`}>AI旅遊顧問</h3>
 
         </div>
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="text-white hover:text-indigo-200 transition-colors p-1 rounded"
+            className="text-white hover:text-[#3fb6b2]/80 transition-colors p-1 rounded"
             title="設置"
           >
             <Settings className="h-4 w-4" />
           </button>
           <button
             onClick={toggleMaximize}
-            className="text-white hover:text-indigo-200 transition-colors p-1 rounded"
+            className="text-white hover:text-[#3fb6b2]/80 transition-colors p-1 rounded"
             title={windowState === 'maximized' ? '還原' : '最大化'}
           >
             {windowState === 'maximized' ? (
@@ -503,14 +506,14 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
           </button>
           <button
             onClick={handleMinimize}
-            className="text-white hover:text-indigo-200 transition-colors p-1 rounded flex items-center justify-center"
+            className="text-white hover:text-[#3fb6b2]/80 transition-colors p-1 rounded flex items-center justify-center"
             title="最小化"
           >
             <span className="text-lg font-bold leading-none">_</span>
           </button>
           <button
             onClick={onToggle}
-            className="text-white hover:text-indigo-200 transition-colors p-1 rounded"
+            className="text-white hover:text-[#3fb6b2]/80 transition-colors p-1 rounded"
             title="關閉"
           >
             <X className="h-4 w-4" />
@@ -538,7 +541,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
               <div
                 className={`max-w-[80%] p-3 rounded-lg animate-slide-up ${
                   message.type === 'user'
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-[#3fb6b2] text-white'
                     : 'bg-white text-gray-800 border border-gray-200'
                 }`}
                 style={{
@@ -547,12 +550,12 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
                 }}
               >
               {message.type === 'assistant' ? (
-                <MarkdownRenderer content={message.content} />
+                <MarkdownRenderer content={message.content} fontClass={fontClass} />
               ) : (
-                <div className="whitespace-pre-line text-sm text-left">{message.content}</div>
+                <div className={`whitespace-pre-line text-sm text-left ${fontClass}`}>{message.content}</div>
               )}
               <div className={`text-xs mt-2 text-left ${
-                message.type === 'user' ? 'text-indigo-200' : 'text-gray-500'
+                message.type === 'user' ? 'text-[#3fb6b2]/80' : 'text-gray-500'
               }`}>
                 {message.timestamp.toLocaleTimeString('zh-TW', { 
                   hour: '2-digit', 
@@ -568,8 +571,8 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
           <div className="flex justify-start animate-fade-in">
             <div className="bg-white text-gray-800 border border-gray-200 p-3 rounded-lg animate-slide-up">
               <div className="flex items-center space-x-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-indigo-600"></div>
-                <span className="text-sm text-gray-600 text-left animate-pulse">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#3fb6b2]"></div>
+                <span className={`text-sm text-gray-600 text-left animate-pulse ${fontClass}`}>
                   {currentProvider ? `${currentProvider.name}正在思考中...` : 'AI正在思考中...'}
                 </span>
               </div>
@@ -596,11 +599,11 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
       {/* 設置區域 */}
       {showSettings && (
         <div className="p-4 border-t border-gray-200 bg-gray-50">
-          <h4 className="font-medium text-gray-900 mb-3">AI 設置</h4>
+          <h4 className={`font-medium text-gray-900 mb-3 ${fontClass}`}>AI 設置</h4>
           <div className="space-y-3">
             {/* AI 提供者選擇 */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className={`block text-sm font-medium text-gray-700 mb-2 ${fontClass}`}>
                 選擇 AI 提供者
               </label>
               <select
@@ -611,7 +614,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
                     setCurrentProvider(provider);
                   }
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3fb6b2] focus:border-[#3fb6b2] text-sm"
               >
                 {availableProviders.map((provider) => (
                   <option key={provider.name} value={provider.name}>
@@ -624,20 +627,20 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
             {/* 提供者狀態 */}
             <div className="text-xs text-gray-500">
               <div className="flex items-center justify-between">
-                <span>當前提供者：{currentProvider?.name || '未選擇'}</span>
+                <span className={fontClass}>當前提供者：{currentProvider?.name || '未選擇'}</span>
                 <button
                   onClick={() => currentProvider && testProvider(currentProvider)}
                   disabled={isTestingProvider || !currentProvider}
-                  className="text-indigo-600 hover:text-indigo-700 disabled:opacity-50 flex items-center space-x-1"
+                  className="text-[#3fb6b2] hover:text-[#3fb6b2]/80 disabled:opacity-50 flex items-center space-x-1"
                 >
                   <RefreshCw className={`h-3 w-3 ${isTestingProvider ? 'animate-spin' : ''}`} />
-                  <span>測試連接</span>
+                  <span className={fontClass}>測試連接</span>
                 </button>
               </div>
             </div>
 
             {/* 提供者說明 */}
-            <div className="text-xs text-gray-500 space-y-1">
+            <div className={`text-xs text-gray-500 space-y-1 ${fontClass}`}>
               {currentProvider?.type === 'ollama' && currentProvider?.isLocal && (
                 <div>
                   <span className="text-green-600">✓ Ollama 服務</span>
@@ -645,7 +648,7 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
               )}
               {currentProvider?.type === 'ollama' && !currentProvider?.isLocal && (
                 <div>
-                  <span className="text-blue-600">✓ 雲端 Ollama 服務</span>
+                  <span className="text-[#3fb6b2]">✓ 雲端 Ollama 服務</span>
                   <span className="text-gray-500 ml-2">(維護中)</span>
                 </div>
               )}
@@ -669,13 +672,13 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
             onChange={(e) => setInputValue(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="詢問旅遊相關問題..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#3fb6b2] focus:border-[#3fb6b2] text-sm"
             disabled={isLoading}
           />
           <button
             onClick={handleSendMessage}
             disabled={!inputValue.trim() || isLoading}
-            className="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="bg-[#3fb6b2] text-white p-2 rounded-lg hover:bg-[#3fb6b2]/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="發送訊息"
           >
             <Send className="h-4 w-4" />
