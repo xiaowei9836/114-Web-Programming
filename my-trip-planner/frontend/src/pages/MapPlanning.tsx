@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import GoogleMap, { type GoogleMapRef } from '../components/GoogleMap';
-import { Bot } from 'lucide-react';
+import { Bot, MessageCircle } from 'lucide-react';
 import { useAIChat } from '../contexts/AIChatContext';
 
 // 穩定的 ID 生成器
@@ -68,9 +68,12 @@ const MapPlanning: React.FC = () => {
   const [savedTripSummary, setSavedTripSummary] = useState<string>('');
   const [showSavedTrip, setShowSavedTrip] = useState(false);
   const [savedTrips, setSavedTrips] = useState<TripData[]>([]); // 新增狀態來保存所有行程
-  const { openChat } = useAIChat();
+  const { openChat, isMinimized } = useAIChat();
   const searchTimeoutRef = useRef<number>();
   const mapRef = useRef<GoogleMapRef>(null);
+  
+  // 直接使用霞鶩文楷字體
+  const fontClass = 'font-["LXGW-WenKai"]';
 
   // 使用 useCallback 穩定 handleLocationSelect 函數
   const handleLocationSelect = useCallback((location: {
@@ -96,6 +99,7 @@ const MapPlanning: React.FC = () => {
     setTripPoints([]);
     setSelectedLocation(null);
   };
+
 
   // 使用 useEffect 來管理地點狀態
   useEffect(() => {
@@ -319,26 +323,20 @@ const MapPlanning: React.FC = () => {
     };
   }, []);
 
+
   const externalMarkers = useMemo(() => {
     return tripPoints.map(point => point.location);
   }, [tripPoints]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen bg-black text-[#e9eef2] ${fontClass}`}>
       <div className="container mx-auto px-2 py-0">
         <div className="mb-2">
           <div className="relative mb-4">
             <div className="text-center">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">地圖行程規劃</h1>
-              <p className="text-gray-600">在地圖上規劃您的旅行地點，創建完美的行程安排</p>
+              <h1 className={`text-3xl font-bold text-[#e9eef2] mb-2 ${fontClass}`}>地圖行程規劃</h1>
+              <p className="text-[#a9b6c3]">在地圖上規劃您的旅行地點，創建完美的行程安排</p>
             </div>
-            <button
-              onClick={openChat}
-              className="absolute top-0 right-0 btn-secondary inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              <Bot className="h-5 w-5" />
-              <span>AI諮詢</span>
-            </button>
           </div>
         </div>
 
@@ -346,8 +344,8 @@ const MapPlanning: React.FC = () => {
           {/* 左側控制面板 */}
           <div className="lg:col-span-1 space-y-6">
             {/* 搜尋欄位 */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">搜尋地點</h2>
+            <div className="bg-gray-700 border border-gray-600 rounded-lg shadow-md p-6">
+              <h2 className={`text-xl font-semibold text-[#e9eef2] mb-4 ${fontClass}`}>搜尋地點</h2>
               <div className="space-y-4">
                 <div className="relative">
                   <input
@@ -355,7 +353,7 @@ const MapPlanning: React.FC = () => {
                     placeholder="輸入地點名稱或地址..."
                     value={searchQuery}
                     onChange={(e) => handleSearchInput(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 text-[#e9eef2] placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
                   />
                   {isSearching && (
                     <div className="absolute right-3 top-3">
@@ -366,23 +364,23 @@ const MapPlanning: React.FC = () => {
                 
                 {/* 搜尋結果 */}
                 {searchResults.length > 0 && (
-                  <div className="border border-gray-200 rounded-lg bg-white shadow-lg">
+                  <div className="border border-gray-600 rounded-lg bg-gray-700 shadow-lg">
                     {searchResults.map((place, index) => (
                       <button
                         key={index}
                         onClick={() => handleSelectSearchResult(place)}
-                        className="w-full text-left px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                        className="w-full text-left px-4 py-3 hover:bg-gray-600 border-b border-gray-600 last:border-b-0 transition-colors"
                       >
-                        <div className="font-medium text-gray-900">{place.name}</div>
+                        <div className="font-medium text-[#e9eef2]">{place.name}</div>
                         {place.formatted_address && (
-                          <div className="text-sm text-gray-600">{place.formatted_address}</div>
+                          <div className="text-sm text-[#a9b6c3]">{place.formatted_address}</div>
                         )}
                       </button>
                     ))}
                   </div>
                 )}
                 
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-[#a9b6c3]">
                   搜尋地點或直接點擊地圖添加標記
                 </p>
               </div>
@@ -390,13 +388,13 @@ const MapPlanning: React.FC = () => {
 
             {/* 添加地點表單 */}
             {showAddForm && selectedLocation && (
-              <div className="bg-white rounded-lg shadow-md p-6 border-2 border-blue-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-md p-6 border-2 border-[#c7a559]">
+                <h3 className={`text-lg font-semibold text-[#e9eef2] mb-4 ${fontClass}`}>
                   添加地點：{selectedLocation.name}
                 </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-[#e9eef2] mb-1">
                       預估費用 (NTD)
                     </label>
                     <input
@@ -404,11 +402,11 @@ const MapPlanning: React.FC = () => {
                       placeholder="0"
                       value={newPoint.estimatedCost}
                       onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedCost: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-[#e9eef2] placeholder-gray-400 rounded-md focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-[#e9eef2] mb-1">
                       預估時間 (分鐘)
                     </label>
                     <input
@@ -417,11 +415,11 @@ const MapPlanning: React.FC = () => {
                       step="5"
                       value={newPoint.estimatedTime}
                       onChange={(e) => setNewPoint(prev => ({ ...prev, estimatedTime: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-[#e9eef2] placeholder-gray-400 rounded-md focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-[#e9eef2] mb-1">
                       備註
                     </label>
                     <textarea
@@ -429,13 +427,13 @@ const MapPlanning: React.FC = () => {
                       value={newPoint.notes}
                       onChange={(e) => setNewPoint(prev => ({ ...prev, notes: e.target.value }))}
                       rows={1}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 text-[#e9eef2] placeholder-gray-400 rounded-md focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
                     />
                   </div>
                   <div className="flex space-x-3">
                     <button
                       onClick={handleAddPoint}
-                      className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                      className="flex-1 bg-gradient-to-r from-[#c7a559] to-[#efc56a] hover:from-[#b8954f] hover:to-[#d4b05a] text-[#162022] py-2 px-4 rounded-md transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
                     >
                       添加地點
                     </button>
@@ -445,7 +443,7 @@ const MapPlanning: React.FC = () => {
                         setSelectedLocation(null);
                         setNewPoint({ estimatedCost: '', estimatedTime: '', notes: '' });
                       }}
-                      className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+                      className="flex-1 bg-gray-600 text-[#e9eef2] py-2 px-4 rounded-md hover:bg-gray-500 transition-colors"
                     >
                       取消
                     </button>
@@ -455,22 +453,22 @@ const MapPlanning: React.FC = () => {
             )}
 
             {/* 行程地點列表 */}
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="bg-gray-700 border border-gray-600 rounded-lg shadow-md p-6">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">行程地點</h2>
+                <h2 className={`text-xl font-semibold text-[#e9eef2] ${fontClass}`}>行程地點</h2>
                 <div className="flex items-center space-x-2">
                   {tripPoints.length > 0 && (
                     <>
                       <button
                         onClick={() => setShowOrderEdit(!showOrderEdit)}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        className="text-[#c7a559] hover:text-[#efc56a] text-sm font-medium"
                         title={showOrderEdit ? '關閉順序編輯' : '開啟順序編輯'}
                       >
                         {showOrderEdit ? '關閉編輯' : '修改順序'}
                       </button>
                       <button
                         onClick={handleClearAll}
-                        className="text-red-600 hover:text-red-700 text-sm font-medium"
+                        className="text-red-400 hover:text-red-300 text-sm font-medium"
                       >
                         清除全部
                       </button>
@@ -480,7 +478,7 @@ const MapPlanning: React.FC = () => {
               </div>
               
               {tripPoints.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-8 text-[#a9b6c3]">
                   <p>還沒有添加任何地點</p>
                   <p className="text-sm">搜尋地點或點擊地圖來開始規劃行程</p>
                 </div>
@@ -490,7 +488,7 @@ const MapPlanning: React.FC = () => {
                     return (
                       <div
                         key={`${point.id}-${index}`}
-                        className={`border border-gray-200 rounded-lg p-4 bg-gray-50`}
+                        className={`border border-gray-600 rounded-lg p-4 bg-gray-700`}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -514,24 +512,24 @@ const MapPlanning: React.FC = () => {
                                        console.log(`MapPlanning: 將 "${point.location.name}" 從第 ${index + 1} 位移動到第 ${newPosition} 位`);
                                      }
                                    }}
-                                   className="w-12 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500 border border-blue-300"
+                                   className="w-12 px-2 py-1 text-xs font-medium bg-[#c7a559] text-[#162022] rounded-full text-center focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559] border border-[#c7a559]"
                                    title={`輸入 1-${tripPoints.length} 來調整順序`}
                                  />
                                ) : (
-                                 <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full mr-2">
+                                 <span className="bg-[#c7a559] text-[#162022] text-xs font-medium px-2 py-1 rounded-full mr-2">
                                    {index + 1}
                                  </span>
                                )}
-                               <h3 className="font-medium text-gray-900">{point.location.name}</h3>
+                               <h3 className={`font-medium text-[#e9eef2] ${fontClass}`}>{point.location.name}</h3>
                                <span className="ml-2 text-red-500" title="地圖標記">📍</span>
                              </div>
                              
                              {/* 詳細訊息區域 - 與"⬆️"按鈕上緣對齊 */}
                              <div className="mt-6">
                                {point.location.address && (
-                                 <p className="text-sm text-gray-600 mb-2">{point.location.address}</p>
+                                 <p className="text-sm text-[#a9b6c3] mb-2">{point.location.address}</p>
                                )}
-                               <div className="flex items-center space-x-4 text-sm text-gray-500">
+                               <div className="flex items-center space-x-4 text-sm text-[#a9b6c3]">
                                  {point.estimatedCost && (
                                    <span>💰 ${point.estimatedCost} NTD</span>
                                  )}
@@ -540,7 +538,7 @@ const MapPlanning: React.FC = () => {
                                  )}
                                </div>
                                {point.notes && (
-                                 <p className="text-sm text-gray-600 mt-2 italic">"{point.notes}"</p>
+                                 <p className="text-sm text-[#a9b6c3] mt-2 italic">"{point.notes}"</p>
                                )}
                              </div>
                            </div>
@@ -552,7 +550,7 @@ const MapPlanning: React.FC = () => {
                                 handleRemovePoint(point.id);
                               }}
                               onMouseDown={(e) => e.stopPropagation()}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50 p-1 rounded w-8 h-8 flex items-center justify-center"
+                              className="text-red-400 hover:text-red-300 hover:bg-red-900/20 p-1 rounded w-8 h-8 flex items-center justify-center"
                               title="移除地點"
                             >
                               ✕
@@ -573,8 +571,8 @@ const MapPlanning: React.FC = () => {
                               disabled={index === 0}
                               className={`p-1 rounded w-8 h-8 flex items-center justify-center ${
                                 index === 0 
-                                  ? 'text-gray-300 cursor-not-allowed' 
-                                  : 'text-blue-600 hover:text-blue-700 hover:bg-blue-50'
+                                  ? 'text-gray-500 cursor-not-allowed' 
+                                  : 'text-[#c7a559] hover:text-[#efc56a] hover:bg-[#c7a559]/20'
                               }`}
                               title={index === 0 ? '已是第一個' : '上移一位'}
                             >
@@ -596,8 +594,8 @@ const MapPlanning: React.FC = () => {
                               disabled={index === tripPoints.length - 1}
                               className={`p-1 rounded w-8 h-8 flex items-center justify-center ${
                                 index === tripPoints.length - 1 
-                                  ? 'text-gray-300 cursor-not-allowed' 
-                                  : 'text-green-600 hover:text-green-700 hover:bg-green-50'
+                                  ? 'text-gray-500 cursor-not-allowed' 
+                                  : 'text-[#c7a559] hover:text-[#efc56a] hover:bg-[#c7a559]/20'
                               }`}
                               title={index === tripPoints.length - 1 ? '已是最後一個' : '下移一位'}
                             >
@@ -615,12 +613,12 @@ const MapPlanning: React.FC = () => {
 
           {/* 右側地圖區域 */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-md py-5 px-0.5">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 px-6">地圖視圖</h2>
+            <div className="bg-gray-700 rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-[#e9eef2] mb-4">地圖視圖</h2>
               <GoogleMap
                 onLocationSelect={handleLocationSelect}
                 showLocationSearch={false}
-                className="h-[500px] rounded-lg border border-gray-200"
+                className="h-[500px] rounded-lg overflow-hidden"
                 externalMarkers={externalMarkers}
                 onMarkerClick={(location) => {
                   console.log('點擊地圖標記:', location);
@@ -631,16 +629,16 @@ const MapPlanning: React.FC = () => {
             </div>
 
             {/* 行程摘要區塊 - 移動到地圖視圖下方 */}
-            <div className="mt-6 bg-white rounded-lg shadow-md p-6">
+            <div className="mt-6 bg-gray-700 rounded-lg shadow-md p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">行程摘要</h3>
-                  <p className="text-gray-600">
+                  <h3 className="text-lg font-semibold text-[#e9eef2]">行程摘要</h3>
+                  <p className="text-[#a9b6c3]">
                     {tripPoints.length > 0 ? (
                       <>
                         已規劃 {tripPoints.length} 個地點
                         {tripPoints.length >= MAX_TRIP_POINTS && (
-                          <span className="ml-2 text-orange-600 font-medium">
+                          <span className="ml-2 text-orange-400 font-medium">
                             (已達上限 {MAX_TRIP_POINTS} 個)
                           </span>
                         )}
@@ -667,12 +665,12 @@ const MapPlanning: React.FC = () => {
                     )}
                   </p>
                   {tripPoints.length > 0 && (
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-[#a9b6c3] mt-2">
                       地點數量限制：{tripPoints.length}/{MAX_TRIP_POINTS}
                     </p>
                   )}
                   {savedTrips.length > 0 && (
-                    <p className="text-sm text-blue-600 mt-2">
+                    <p className="text-sm text-blue-400 mt-2">
                       已保存 {savedTrips.length} 個行程
                     </p>
                   )}
@@ -681,10 +679,10 @@ const MapPlanning: React.FC = () => {
                   <button
                     onClick={handleSaveTrip}
                     disabled={tripPoints.length === 0}
-                    className={`px-6 py-2 rounded-lg transition-colors ${
+                    className={`px-6 py-2 rounded-lg transition-colors ${fontClass} ${
                       tripPoints.length === 0
                         ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                        : 'bg-green-600 text-white hover:bg-green-700'
+                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                     }`}
                   >
                     保存行程
@@ -692,10 +690,10 @@ const MapPlanning: React.FC = () => {
                   <button
                     onClick={handleClearAll}
                     disabled={tripPoints.length === 0}
-                    className={`px-6 py-2 rounded-lg transition-colors ${
+                    className={`px-6 py-2 rounded-lg transition-colors ${fontClass} ${
                       tripPoints.length === 0
                         ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                        : 'bg-red-600 text-white hover:bg-red-700'
+                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
                     }`}
                   >
                     清除全部
@@ -706,9 +704,9 @@ const MapPlanning: React.FC = () => {
 
             {/* 保存的行程顯示區域 */}
             {savedTrips.length > 0 && (
-              <div className="mt-6 bg-blue-50 rounded-lg border border-blue-200 p-6">
+              <div className="mt-6 bg-gray-700 rounded-lg shadow-md p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-blue-900">已保存的行程</h3>
+                  <h3 className="text-lg font-semibold text-[#e9eef2]">已保存的行程</h3>
                   <button
                     onClick={() => {
                       setSavedTrips([]);
@@ -721,16 +719,16 @@ const MapPlanning: React.FC = () => {
                         console.error('MapPlanning: 清除保存的行程數據失敗:', error);
                       }
                     }}
-                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                    className="text-blue-400 hover:text-blue-300 text-sm font-medium"
                   >
                     清除全部
                   </button>
                 </div>
                 <div className="space-y-4">
                   {savedTrips.map((trip, index) => (
-                    <div key={trip.id} className="bg-white rounded-lg p-4 border border-blue-200">
+                    <div key={trip.id} className="bg-gray-200 rounded-lg p-4 border border-gray-300">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-blue-900">
+                        <h4 className="font-medium text-blue-600">
                           行程 {index + 1} 保存於：{new Date(trip.createdAt).toLocaleString('zh-TW')}
                         </h4>
                         <button
@@ -775,6 +773,17 @@ const MapPlanning: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* AI旅遊顧問浮動按鈕 - 只在未最小化時顯示 */}
+      {!isMinimized && (
+        <button
+          onClick={openChat}
+          className="fixed bottom-6 right-6 z-50 w-16 h-16 bg-gradient-to-r from-[#c7a559] to-[#efc56a] hover:from-[#b8954f] hover:to-[#d4b05a] text-[#162022] rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center group"
+          title="AI旅遊顧問"
+        >
+          <MessageCircle className="h-8 w-8 group-hover:scale-110 transition-transform duration-300" />
+        </button>
+      )}
       
     </div>
   );
