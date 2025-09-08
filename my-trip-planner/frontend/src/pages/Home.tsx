@@ -43,37 +43,37 @@ const Home: React.FC = () => {
       icon: <Globe className="h-12 w-12 text-blue-600" />,
       title: '地圖規劃',
       description: '規劃專屬旅行路線，探索目的景點和餐廳',
-      color: 'from-blue-500/20 to-cyan-500/25'
+      color: 'bg-[#E8F2FF]'
     },
     {
       icon: <Calendar className="h-12 w-12 text-green-600" />,
       title: '行程安排',
       description: '建立詳細行程，包含活動、時間和住宿等',
-      color: 'from-green-500/20 to-emerald-500/25'
+      color: 'bg-[#E8F8F0]'
     },
     {
       icon: <DollarSign className="h-12 w-12 text-yellow-600" />,
       title: '預算管理',
       description: '追蹤旅行支出，設定預算限制和管理財務',
-      color: 'from-yellow-500/20 to-amber-500/25'
+      color: 'bg-[#FFF8E8]'
     },
     {
       icon: <Bell className="h-12 w-12 text-purple-600" />,
       title: '旅行提醒',
       description: '設置重要提醒，如航班時間、飯店入住等',
-      color: 'from-purple-500/20 to-violet-500/25'
+      color: 'bg-[#F8E8FF]'
     },
     {
       icon: <BookOpen className="h-12 w-12 text-red-600" />,
       title: '旅行日記',
       description: '記錄旅行中的精彩時刻，分享照片與回憶',
-      color: 'from-red-500/20 to-rose-500/25'
+      color: 'bg-[#FFE8E8]'
     },
     {
       icon: <Bot className="h-12 w-12 text-indigo-600" />,
       title: 'AI 諮詢',
       description: '智能助理，提供旅遊行程、或預算等建議',
-      color: 'from-indigo-500/20 to-blue-500/25'
+      color: 'bg-[#E8F2FF]'
     }
   ];
 
@@ -432,7 +432,7 @@ const Home: React.FC = () => {
             {features.map((feature, index) => (
               <div 
                 key={index}
-                className={`group bg-gray-800 border border-gray-700 rounded-2xl p-6 hover:bg-gray-700 hover:border-gray-600 hover:-translate-y-2 transition-all duration-700 ${
+                className={`group ${feature.color} border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:-translate-y-2 transition-all duration-700 ${
                   isFeaturesVisible 
                     ? 'opacity-100 translate-y-0' 
                     : 'opacity-0 translate-y-12'
@@ -442,12 +442,14 @@ const Home: React.FC = () => {
                 }}
               >
                 <div className="flex justify-center mb-4">
-                  {feature.icon}
+                  <div className={`w-16 h-16 ${feature.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                    {feature.icon}
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-center group-hover:text-[#c7a559] transition-colors">
+                <h3 className="text-xl font-semibold mb-3 text-center text-gray-800 group-hover:text-gray-900 transition-colors">
                   {feature.title}
                 </h3>
-                <p className="text-[#a9b6c3] leading-relaxed text-center">
+                <p className="text-gray-600 leading-relaxed text-center group-hover:text-gray-700 transition-colors">
                   {feature.description}
                 </p>
               </div>

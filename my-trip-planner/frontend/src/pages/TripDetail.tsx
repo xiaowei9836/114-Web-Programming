@@ -120,7 +120,7 @@ const TripDetail: React.FC = () => {
       <div className="flex items-center justify-between">
         <button
           onClick={() => navigate('/trips')}
-          className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+          className="inline-flex items-center space-x-2 text-white hover:text-blue-100 transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />
           <span>返回旅行列表</span>
@@ -132,17 +132,17 @@ const TripDetail: React.FC = () => {
       </div>
 
       {/* 旅行標題和基本訊息 */}
-      <div className="card">
+      <div className="bg-blue-50 rounded-lg shadow-md p-6 border border-blue-100">
         <h1 className="text-3xl font-bold text-gray-900 mb-4">{trip.title}</h1>
         {trip.description && (
-          <p className="text-gray-600 mb-6">{trip.description}</p>
+          <p className="text-gray-700 mb-6">{trip.description}</p>
         )}
         
         <div className="grid md:grid-cols-3 gap-6">
           <div className="flex items-center space-x-3">
             <MapPin className="h-6 w-6 text-blue-600" />
             <div>
-              <p className="text-sm text-gray-500">目的地</p>
+              <p className="text-sm text-gray-700">目的地</p>
               <p className="font-medium text-gray-900">{trip.destination}</p>
             </div>
           </div>
@@ -150,18 +150,18 @@ const TripDetail: React.FC = () => {
           <div className="flex items-center space-x-3">
             <Calendar className="h-6 w-6 text-green-600" />
             <div>
-              <p className="text-sm text-gray-500">旅行日期</p>
+              <p className="text-sm text-gray-700">旅行日期</p>
               <p className="font-medium text-gray-900">
                 {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
               </p>
-              <p className="text-sm text-gray-500">{calculateDuration(trip.startDate, trip.endDate)} 天</p>
+              <p className="text-sm text-gray-700">{calculateDuration(trip.startDate, trip.endDate)} 天</p>
             </div>
           </div>
           
           <div className="flex items-center space-x-3">
             <DollarSign className="h-6 w-6 text-yellow-600" />
             <div>
-              <p className="text-sm text-gray-500">預算</p>
+              <p className="text-sm text-gray-700">預算</p>
               <p className="font-medium text-gray-900">
                 {trip.budget.spent} / {trip.budget.total} {trip.budget.currency}
               </p>
@@ -171,8 +171,8 @@ const TripDetail: React.FC = () => {
       </div>
 
       {/* 標籤頁導航 */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      <div className="bg-blue-600 border-b border-blue-500 rounded-t-lg">
+        <nav className="-mb-px flex space-x-8 px-6 py-4">
           {[
             { id: 'overview', label: '概覽' },
             { id: 'itinerary', label: '行程' },
@@ -185,8 +185,8 @@ const TripDetail: React.FC = () => {
               onClick={() => setActiveTab(tab.id as any)}
               className={`py-2 px-1 border-b-2 font-medium text-sm ${
                 activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-white text-white'
+                  : 'border-transparent text-white/90 hover:text-white hover:border-white/70'
               }`}
             >
               {tab.label}
@@ -218,15 +218,15 @@ const TripDetail: React.FC = () => {
         {activeTab === 'overview' && (
           <div className="grid md:grid-cols-2 gap-6">
             {/* 預算概覽 */}
-            <div className="card">
+            <div className="bg-blue-50 rounded-lg shadow-md p-6 border border-blue-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">預算概覽</h3>
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-600">已花費</span>
+                    <span className="text-gray-700">已花費</span>
                     <span className="font-medium">{trip.budget.spent} {trip.budget.currency}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-blue-100 rounded-full h-2">
                     <div
                       className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                       style={{ width: `${Math.min(getBudgetPercentage(), 100)}%` }}
@@ -234,7 +234,7 @@ const TripDetail: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">剩餘預算</span>
+                  <span className="text-gray-700">剩餘預算</span>
                   <span className="font-medium text-green-600">
                     {trip.budget.total - trip.budget.spent} {trip.budget.currency}
                   </span>
@@ -243,23 +243,23 @@ const TripDetail: React.FC = () => {
             </div>
 
             {/* 快速統計 */}
-            <div className="card">
+            <div className="bg-blue-50 rounded-lg shadow-md p-6 border border-blue-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">快速統計</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">行程活動</span>
+                  <span className="text-gray-700">行程活動</span>
                   <span className="font-medium">
                     {trip.itinerary.reduce((total, day) => total + day.activities.length, 0)} 個
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">提醒事項</span>
+                  <span className="text-gray-700">提醒事項</span>
                   <span className="font-medium">
                     {trip.reminders.filter(r => !r.completed).length} 個待辦
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">日記條目</span>
+                  <span className="text-gray-700">日記條目</span>
                   <span className="font-medium">{trip.journal.length} 篇</span>
                 </div>
               </div>
@@ -268,18 +268,18 @@ const TripDetail: React.FC = () => {
         )}
 
         {activeTab === 'itinerary' && (
-          <div className="card">
+          <div className="bg-blue-50 rounded-lg shadow-md p-6 border border-blue-100">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold text-gray-900">行程安排</h3>
               <button className="btn-primary inline-flex items-center space-x-2">
                 <Plus className="h-4 w-4" />
-                <span>添加活動</span>
+                <span>新增活動</span>
               </button>
             </div>
             
             {trip.itinerary.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                還沒有行程安排，開始添加您的第一個活動吧！
+              <div className="text-center py-8 text-gray-700">
+                還沒有行程安排，開始新增您的第一個活動吧！
               </div>
             ) : (
               <div className="space-y-6">
@@ -290,16 +290,16 @@ const TripDetail: React.FC = () => {
                     </h4>
                     <div className="space-y-3">
                       {day.activities.map((activity, activityIndex) => (
-                        <div key={activityIndex} className="bg-gray-50 p-4 rounded-lg">
+                        <div key={activityIndex} className="bg-blue-50 p-4 rounded-lg">
                           <div className="flex justify-between items-start mb-2">
                             <h5 className="font-medium text-gray-900">{activity.title}</h5>
-                            <span className="text-sm text-gray-500">{activity.time}</span>
+                            <span className="text-sm text-gray-700">{activity.time}</span>
                           </div>
                           {activity.description && (
-                            <p className="text-gray-600 text-sm mb-2">{activity.description}</p>
+                            <p className="text-gray-700 text-sm mb-2">{activity.description}</p>
                           )}
                           <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-500">{activity.location}</span>
+                            <span className="text-gray-700">{activity.location}</span>
                             <span className="font-medium text-green-600">
                               {activity.cost} {trip.budget.currency}
                             </span>
@@ -315,7 +315,7 @@ const TripDetail: React.FC = () => {
         )}
 
         {activeTab === 'budget' && (
-          <div className="card">
+          <div className="bg-blue-50 rounded-lg shadow-md p-6 border border-blue-100">
             <h3 className="text-lg font-semibold text-gray-900 mb-6">預算管理</h3>
             <div className="space-y-6">
               <div className="bg-blue-50 p-4 rounded-lg">
@@ -339,15 +339,15 @@ const TripDetail: React.FC = () => {
               </div>
               
               <div>
-                <h4 className="font-medium text-gray-900 mb-4">支出記錄</h4>
+                <h4 className="font-medium text-gray-900 mb-4">支出紀錄</h4>
                 <div className="space-y-3">
                   {trip.itinerary.flatMap(day => 
                     day.activities.filter(activity => activity.cost > 0)
                   ).map((activity, index) => (
-                    <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <div key={index} className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
                       <div>
                         <p className="font-medium text-gray-900">{activity.title}</p>
-                        <p className="text-sm text-gray-500">{activity.location}</p>
+                        <p className="text-sm text-gray-700">{activity.location}</p>
                       </div>
                       <span className="font-medium text-red-600">
                         -{activity.cost} {trip.budget.currency}
@@ -361,24 +361,24 @@ const TripDetail: React.FC = () => {
         )}
 
         {activeTab === 'reminders' && (
-          <div className="card">
+          <div className="bg-blue-50 rounded-lg shadow-md p-6 border border-blue-100">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-semibold text-gray-900">旅行提醒</h3>
               <button className="btn-primary inline-flex items-center space-x-2">
                 <Plus className="h-4 w-4" />
-                <span>添加提醒</span>
+                <span>新增提醒</span>
               </button>
             </div>
             
             {trip.reminders.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                還沒有提醒事項，添加一些重要的提醒吧！
+              <div className="text-center py-8 text-gray-700">
+                還沒有提醒事項，新增一些重要的提醒吧！
               </div>
             ) : (
               <div className="space-y-4">
                 {trip.reminders.map((reminder) => (
-                  <div key={reminder._id} className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                    <button className="text-gray-400 hover:text-green-600 transition-colors">
+                  <div key={reminder._id} className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
+                    <button className="text-gray-500 hover:text-green-600 transition-colors">
                       {reminder.completed ? (
                         <CheckCircle className="h-5 w-5 text-green-600" />
                       ) : (
@@ -386,15 +386,15 @@ const TripDetail: React.FC = () => {
                       )}
                     </button>
                     <div className="flex-1">
-                      <h4 className={`font-medium ${reminder.completed ? 'line-through text-gray-500' : 'text-gray-900'}`}>
+                      <h4 className={`font-medium ${reminder.completed ? 'line-through text-gray-700' : 'text-gray-900'}`}>
                         {reminder.title}
                       </h4>
                       {reminder.description && (
-                        <p className={`text-sm ${reminder.completed ? 'text-gray-400' : 'text-gray-600'}`}>
+                        <p className={`text-sm ${reminder.completed ? 'text-gray-500' : 'text-gray-700'}`}>
                           {reminder.description}
                         </p>
                       )}
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-700">
                         截止日期: {formatDate(reminder.dueDate)}
                       </p>
                     </div>
@@ -406,9 +406,9 @@ const TripDetail: React.FC = () => {
         )}
 
         {activeTab === 'journal' && (
-          <div className="card">
+          <div className="bg-blue-50 rounded-lg shadow-md p-6 border border-blue-100">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">旅行日记</h3>
+              <h3 className="text-lg font-semibold text-gray-900">旅行日記</h3>
               <button className="btn-primary inline-flex items-center space-x-2">
                 <Plus className="h-4 w-4" />
                 <span>寫日記</span>
@@ -416,8 +416,8 @@ const TripDetail: React.FC = () => {
             </div>
             
             {trip.journal.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                還沒有日記條目，開始記錄您的旅行感受吧！
+              <div className="text-center py-8 text-gray-700">
+                還沒有日記條目，開始紀錄您的旅行感受吧！
               </div>
             ) : (
               <div className="space-y-6">
@@ -427,15 +427,15 @@ const TripDetail: React.FC = () => {
                       <h4 className="font-medium text-gray-900">{entry.title}</h4>
                       <div className="flex items-center space-x-2">
                         <span className="text-2xl">{getMoodIcon(entry.mood)}</span>
-                        <span className="text-sm text-gray-500">{formatDate(entry.date)}</span>
+                        <span className="text-sm text-gray-700">{formatDate(entry.date)}</span>
                       </div>
                     </div>
-                    <p className="text-gray-600 mb-3">{entry.content}</p>
+                    <p className="text-gray-700 mb-3">{entry.content}</p>
                     {entry.photos.length > 0 && (
                       <div className="flex space-x-2">
                         {entry.photos.map((_, index) => (
-                          <div key={index} className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
-                            <span className="text-gray-400 text-xs">照片</span>
+                          <div key={index} className="w-20 h-20 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <span className="text-gray-500 text-xs">照片</span>
                           </div>
                         ))}
                       </div>

@@ -11,6 +11,10 @@ const Navbar: React.FC = () => {
   const fontClass = 'font-["LXGW-WenKai"]';
 
   const isActive = (path: string) => {
+    if (path === '/trips') {
+      // 對於"我的旅行"，匹配 /trips 和 /trips/:id
+      return location.pathname === '/trips' || location.pathname.startsWith('/trips/');
+    }
     return location.pathname === path;
   };
 

@@ -26,6 +26,16 @@ const TripList: React.FC = () => {
   // 後端 API 端點配置
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
 
+  // 旅行卡片背景顏色數組
+  const cardColors = [
+    'bg-[#E8F2FF]', // 淺藍色
+    'bg-[#E8F8F0]', // 淺綠色
+    'bg-[#FFF8E8]', // 淺黃色
+    'bg-[#F8E8FF]', // 淺紫色
+    'bg-[#FFE8E8]', // 淺紅色
+    'bg-[#E8F2FF]', // 淺藍色 (重複)
+  ];
+
   useEffect(() => {
     fetchTrips();
   }, []);
@@ -277,64 +287,67 @@ const TripList: React.FC = () => {
             </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {trips.map((trip) => (
-            <div key={trip._id} className="bg-gray-700 rounded-lg shadow-md p-6 hover:bg-gray-600 transition-all duration-200">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-semibold text-[#e9eef2]">{trip.title}</h3>
-                <div className="flex space-x-2">
+          {trips.map((trip, index) => {
+            const cardColor = cardColors[index % cardColors.length];
+            return (
+              <div key={trip._id} className={`${cardColor} border border-gray-200 rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-200`}>
+                <div className="flex justify-between items-start mb-4">
+                  <h3 className="text-xl font-semibold text-gray-900">{trip.title}</h3>
+                  <div className="flex space-x-2">
+                    <Link
+                      to={`/trips/${trip._id}`}
+                      className="text-gray-700 hover:text-[#3fb6b2] transition-colors"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Link>
+                    <button
+                      onClick={() => deleteTrip(trip._id)}
+                      className="text-gray-700 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center space-x-2 text-gray-800">
+                    <MapPin className="h-4 w-4 text-blue-600" />
+                    <span>{trip.destination}</span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-gray-800">
+                    <Calendar className="h-4 w-4 text-green-600" />
+                    <span>
+                      {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-gray-800">
+                    <DollarSign className="h-4 w-4 text-yellow-600" />
+                    <span>
+                      {trip.budget.spent} / {trip.budget.total} {trip.budget.currency}
+                    </span>
+                  </div>
+                </div>
+
+                {trip.description && (
+                  <p className="text-gray-800 text-sm mb-4 line-clamp-2">
+                    {trip.description}
+                  </p>
+                )}
+
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-800">
+                    {calculateDuration(trip.startDate, trip.endDate)} 天
+                  </span>
                   <Link
                     to={`/trips/${trip._id}`}
-                    className="text-[#a9b6c3] hover:text-blue-400 transition-colors"
+                    className="text-[#3fb6b2] hover:text-[#3fb6b2]/80 font-medium text-sm"
                   >
-                    <Edit className="h-4 w-4" />
+                    查看詳情 →
                   </Link>
-                  <button
-                    onClick={() => deleteTrip(trip._id)}
-                    className="text-[#a9b6c3] hover:text-red-400 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
                 </div>
               </div>
-
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center space-x-2 text-[#a9b6c3]">
-                  <MapPin className="h-4 w-4" />
-                  <span>{trip.destination}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-[#a9b6c3]">
-                  <Calendar className="h-4 w-4" />
-                  <span>
-                    {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2 text-[#a9b6c3]">
-                  <DollarSign className="h-4 w-4" />
-                  <span>
-                    {trip.budget.spent} / {trip.budget.total} {trip.budget.currency}
-                  </span>
-                </div>
-              </div>
-
-              {trip.description && (
-                <p className="text-[#a9b6c3] text-sm mb-4 line-clamp-2">
-                  {trip.description}
-                </p>
-              )}
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-[#a9b6c3]">
-                  {calculateDuration(trip.startDate, trip.endDate)} 天
-                </span>
-                <Link
-                  to={`/trips/${trip._id}`}
-                  className="text-blue-400 hover:text-blue-300 font-medium text-sm"
-                >
-                  查看詳情 →
-                </Link>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
         </div>
