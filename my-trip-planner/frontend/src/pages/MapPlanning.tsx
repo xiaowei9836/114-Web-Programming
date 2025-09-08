@@ -518,7 +518,7 @@ const MapPlanning: React.FC = () => {
                     <>
                       <button
                         onClick={() => setShowOrderEdit(!showOrderEdit)}
-                        className="text-[#c7a559] hover:text-[#efc56a] text-sm font-medium"
+                        className="text-[#3fb6b2] hover:text-[#369a96] text-sm font-medium"
                         title={showOrderEdit ? '關閉順序編輯' : '開啟順序編輯'}
                       >
                         {showOrderEdit ? '關閉編輯' : '修改順序'}
@@ -569,11 +569,11 @@ const MapPlanning: React.FC = () => {
                                        console.log(`MapPlanning: 將 "${point.location.name}" 從第 ${index + 1} 位移動到第 ${newPosition} 位`);
                                      }
                                    }}
-                                   className="w-12 px-2 py-1 text-xs font-medium bg-[#c7a559] text-[#162022] rounded-full text-center focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559] border border-[#c7a559]"
+                                   className="w-12 px-2 py-1 text-xs font-medium bg-[#3fb6b2] text-white rounded-full text-center focus:ring-2 focus:ring-[#3fb6b2] focus:border-[#3fb6b2] border border-[#3fb6b2]"
                                    title={`輸入 1-${tripPoints.length} 來調整順序`}
                                  />
                                ) : (
-                                 <span className="bg-[#c7a559] text-[#162022] text-xs font-medium px-2 py-1 rounded-full mr-2">
+                                 <span className="bg-[#3fb6b2] text-white text-xs font-medium px-2 py-1 rounded-full mr-2">
                                    {index + 1}
                                  </span>
                                )}
