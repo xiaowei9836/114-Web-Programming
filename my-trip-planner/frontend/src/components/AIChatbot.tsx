@@ -488,14 +488,14 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
         <div className="flex items-center space-x-2">
           <button
             onClick={() => setShowSettings(!showSettings)}
-            className="text-white hover:text-[#3fb6b2]/80 transition-colors p-1 rounded"
+            className="text-white transition-colors p-1 rounded"
             title="設置"
           >
             <Settings className="h-4 w-4" />
           </button>
           <button
             onClick={toggleMaximize}
-            className="text-white hover:text-[#3fb6b2]/80 transition-colors p-1 rounded"
+            className="text-white transition-colors p-1 rounded"
             title={windowState === 'maximized' ? '還原' : '最大化'}
           >
             {windowState === 'maximized' ? (
@@ -506,14 +506,14 @@ const AIChatbot: React.FC<AIChatbotProps> = ({
           </button>
           <button
             onClick={handleMinimize}
-            className="text-white hover:text-[#3fb6b2]/80 transition-colors p-1 rounded flex items-center justify-center"
+            className="text-white transition-colors p-1 rounded flex items-center justify-center"
             title="最小化"
           >
             <span className="text-lg font-bold leading-none">_</span>
           </button>
           <button
             onClick={onToggle}
-            className="text-white hover:text-[#3fb6b2]/80 transition-colors p-1 rounded"
+            className="text-white transition-colors p-1 rounded"
             title="關閉"
           >
             <X className="h-4 w-4" />

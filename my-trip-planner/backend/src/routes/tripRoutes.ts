@@ -8,7 +8,8 @@ import {
   deleteTrip,
   addItineraryActivity,
   addReminder,
-  addJournalEntry
+  addJournalEntry,
+  deleteJournalEntry
 } from '../controllers/tripController';
 
 const router = express.Router();
@@ -37,5 +38,7 @@ router.post('/reminders', addReminder);
 
 // 日誌管理
 router.post('/journal', addJournalEntry);
+router.post('/:id/journal', addJournalEntry);
+router.delete('/:id/journal/:journalId', deleteJournalEntry);
 
 export default router;

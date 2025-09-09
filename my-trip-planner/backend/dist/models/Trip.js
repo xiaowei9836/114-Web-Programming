@@ -121,7 +121,28 @@ const TripSchema = new mongoose_1.Schema({
                 enum: ['excellent', 'good', 'okay', 'bad'],
                 default: 'good'
             }
-        }]
+        }],
+    // 地圖行程數據
+    mapTripData: {
+        id: String,
+        createdAt: String,
+        customName: String, // 自定義行程名稱
+        totalPoints: Number,
+        totalEstimatedCost: Number,
+        totalEstimatedTime: Number,
+        points: [{
+                order: Number,
+                name: String,
+                address: String,
+                coordinates: {
+                    lat: Number,
+                    lng: Number
+                },
+                estimatedCost: Number,
+                estimatedTime: Number,
+                notes: String
+            }]
+    }
 }, {
     timestamps: true
 });

@@ -92,7 +92,7 @@ const CreateTrip: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen bg-black text-[#e9eef2] ${fontClass}`}>
+    <div className={`min-h-screen bg-black text-gray-800 ${fontClass}`}>
       <div className="container mx-auto px-2 py-0">
         <div className="mb-2">
           <div className="relative mb-4">
@@ -104,9 +104,9 @@ const CreateTrip: React.FC = () => {
         </div>
 
         <div className="max-w-2xl mx-auto">
-          <div className="bg-gray-700 rounded-lg shadow-md p-6">
+          <div className="bg-blue-50 rounded-lg shadow-md p-6 border border-blue-200">
             <div className="flex justify-between items-center mb-6">
-              <h2 className={`text-xl font-semibold text-[#e9eef2] ${fontClass}`}>旅行資訊</h2>
+              <h2 className={`text-xl font-semibold text-gray-800 ${fontClass}`}>旅行資訊</h2>
               <button
                 onClick={openChat}
                 className="px-4 py-2 rounded-full bg-[#3fb6b2] hover:bg-[#369a96] transition-colors text-white inline-flex items-center space-x-2"
@@ -119,11 +119,11 @@ const CreateTrip: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* 基本信息 */}
               <div className="space-y-4">
-                <h3 className={`text-lg font-semibold text-[#e9eef2] ${fontClass}`}>基本訊息</h3>
+                <h3 className={`text-lg font-semibold text-gray-800 ${fontClass}`}>基本訊息</h3>
             
             <div>
                 <div>
-                  <label htmlFor="title" className={`block text-sm font-medium text-[#e9eef2] mb-2 ${fontClass}`}>
+                  <label htmlFor="title" className={`block text-sm font-medium text-gray-800 mb-2 ${fontClass}`}>
                     旅行標題 *
                   </label>
                   <input
@@ -132,7 +132,7 @@ const CreateTrip: React.FC = () => {
                     name="title"
                     value={form.title}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 bg-gray-600 border border-gray-500 text-[#e9eef2] placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
+                    className="w-full px-3 py-2 bg-white border border-blue-200 text-gray-800 placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
                     placeholder="例如：東京櫻花之旅"
                     required
                   />
@@ -140,7 +140,7 @@ const CreateTrip: React.FC = () => {
             </div>
 
                 <div>
-                  <label htmlFor="description" className={`block text-sm font-medium text-[#e9eef2] mb-2 ${fontClass}`}>
+                  <label htmlFor="description" className={`block text-sm font-medium text-gray-800 mb-2 ${fontClass}`}>
                     旅行描述
                   </label>
                   <textarea
@@ -149,13 +149,13 @@ const CreateTrip: React.FC = () => {
                     value={form.description}
                     onChange={handleInputChange}
                     rows={3}
-                    className="w-full px-3 py-2 bg-gray-600 border border-gray-500 text-[#e9eef2] placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
+                    className="w-full px-3 py-2 bg-white border border-blue-200 text-gray-800 placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
                     placeholder="描述您的旅行計劃..."
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="destination" className={`block text-sm font-medium text-[#e9eef2] mb-2 ${fontClass}`}>
+                  <label htmlFor="destination" className={`block text-sm font-medium text-gray-800 mb-2 ${fontClass}`}>
                     目的地 *
                   </label>
                   <div className="relative">
@@ -166,7 +166,7 @@ const CreateTrip: React.FC = () => {
                       name="destination"
                       value={form.destination}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-3 py-2 bg-gray-600 border border-gray-500 text-[#e9eef2] placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
+                      className="w-full pl-10 pr-3 py-2 bg-white border border-blue-200 text-gray-800 placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
                       placeholder="例如：東京，日本"
                       required
                     />
@@ -176,11 +176,11 @@ const CreateTrip: React.FC = () => {
 
               {/* 日期 */}
               <div className="space-y-4">
-                <h3 className={`text-lg font-semibold text-[#e9eef2] ${fontClass}`}>旅行日期</h3>
+                <h3 className={`text-lg font-semibold text-gray-800 ${fontClass}`}>旅行日期</h3>
             
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="startDate" className={`block text-sm font-medium text-[#e9eef2] mb-2 ${fontClass}`}>
+                    <label htmlFor="startDate" className={`block text-sm font-medium text-gray-800 mb-2 ${fontClass}`}>
                       開始日期 *
                     </label>
                     <div className="relative">
@@ -191,14 +191,14 @@ const CreateTrip: React.FC = () => {
                         name="startDate"
                         value={form.startDate}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-2 bg-gray-600 border border-gray-500 text-[#e9eef2] rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
+                        className="w-full pl-10 pr-3 py-2 bg-white border border-blue-200 text-gray-800 rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
                         required
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label htmlFor="endDate" className={`block text-sm font-medium text-[#e9eef2] mb-2 ${fontClass}`}>
+                    <label htmlFor="endDate" className={`block text-sm font-medium text-gray-800 mb-2 ${fontClass}`}>
                       結束日期 *
                     </label>
                     <div className="relative">
@@ -209,7 +209,7 @@ const CreateTrip: React.FC = () => {
                         name="endDate"
                         value={form.endDate}
                         onChange={handleInputChange}
-                        className="w-full pl-10 pr-3 py-2 bg-gray-600 border border-gray-500 text-[#e9eef2] rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
+                        className="w-full pl-10 pr-3 py-2 bg-white border border-blue-200 text-gray-800 rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
                         required
                         min={form.startDate}
                       />
@@ -220,11 +220,11 @@ const CreateTrip: React.FC = () => {
 
               {/* 預算 */}
               <div className="space-y-4">
-                <h3 className={`text-lg font-semibold text-[#e9eef2] ${fontClass}`}>預算設置</h3>
+                <h3 className={`text-lg font-semibold text-gray-800 ${fontClass}`}>預算設置</h3>
             
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="budget.total" className={`block text-sm font-medium text-[#e9eef2] mb-2 ${fontClass}`}>
+                    <label htmlFor="budget.total" className={`block text-sm font-medium text-gray-800 mb-2 ${fontClass}`}>
                       總預算
                     </label>
                     <div className="relative">
@@ -237,14 +237,14 @@ const CreateTrip: React.FC = () => {
                         onChange={handleInputChange}
                         min="0"
                         step="0.01"
-                        className="w-full pl-10 pr-3 py-2 bg-gray-600 border border-gray-500 text-[#e9eef2] placeholder-gray-400 rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
+                        className="w-full pl-10 pr-3 py-2 bg-white border border-blue-200 text-gray-800 placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
                         placeholder="0.00"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label htmlFor="budget.currency" className={`block text-sm font-medium text-[#e9eef2] mb-2 ${fontClass}`}>
+                    <label htmlFor="budget.currency" className={`block text-sm font-medium text-gray-800 mb-2 ${fontClass}`}>
                       貨幣
                     </label>
                     <select
@@ -252,7 +252,7 @@ const CreateTrip: React.FC = () => {
                       name="budget.currency"
                       value={form.budget.currency}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 bg-gray-600 border border-gray-500 text-[#e9eef2] rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
+                      className="w-full px-3 py-2 bg-white border border-blue-200 text-gray-800 rounded-lg focus:ring-2 focus:ring-[#c7a559] focus:border-[#c7a559]"
                     >
                       <option value="NTD">NTD (NT$)</option>
                       <option value="USD">USD ($)</option>
@@ -265,11 +265,11 @@ const CreateTrip: React.FC = () => {
               </div>
 
               {/* 提交按鈕 */}
-              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-600">
+              <div className="flex justify-end space-x-4 pt-6 border-t border-blue-200">
                 <button
                   type="button"
                   onClick={() => navigate(-1)}
-                  className="px-4 py-2 rounded-lg border border-gray-500 text-[#e9eef2] hover:bg-gray-600 transition-colors"
+                  className="px-4 py-2 rounded-lg border border-blue-200 text-gray-800 hover:bg-blue-100 transition-colors"
                 >
                   取消
                 </button>

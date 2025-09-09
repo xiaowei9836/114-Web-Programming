@@ -125,12 +125,25 @@ export const addReminder = async (req: Request, res: Response): Promise<void> =>
 // 添加日记条目
 export const addJournalEntry = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { tripId, journalEntry } = req.body;
+    // 支持两种请求格式：/:id/journal 和 /journal
+    const tripId = req.params.id || req.body.tripId;
+    const journalEntry = req.body.journalEntry || req.body;
+    
+    if (!tripId) {
+      res.status(400).json({ message: '缺少旅行ID' });
+      return;
+    }
+
     const trip = await Trip.findById(tripId);
     
     if (!trip) {
       res.status(404).json({ message: '旅行不存在' });
       return;
+    }
+
+    // 确保 journal 数组存在
+    if (!trip.journal) {
+      trip.journal = [];
     }
 
     trip.journal.push(journalEntry);
@@ -139,5 +152,42 @@ export const addJournalEntry = async (req: Request, res: Response): Promise<void
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '未知错误';
     res.status(400).json({ message: '添加日记条目失败', error: errorMessage });
+  }
+};
+
+// 删除日记条目
+export const deleteJournalEntry = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id, journalId } = req.params;
+    
+    const trip = await Trip.findById(id);
+    
+    if (!trip) {
+      res.status(404).json({ message: '旅行不存在' });
+      return;
+    }
+
+    // 确保 journal 数组存在
+    if (!trip.journal) {
+      res.status(404).json({ message: '日記不存在' });
+      return;
+    }
+
+    // 查找並刪除指定的日記條目
+    const journalIndex = trip.journal.findIndex((entry, index) => 
+      index.toString() === journalId || entry.title === journalId
+    );
+
+    if (journalIndex === -1) {
+      res.status(404).json({ message: '日記條目不存在' });
+      return;
+    }
+
+    trip.journal.splice(journalIndex, 1);
+    const updatedTrip = await trip.save();
+    res.status(200).json(updatedTrip);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    res.status(400).json({ message: '删除日记条目失败', error: errorMessage });
   }
 };

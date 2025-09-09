@@ -38,6 +38,12 @@ const Home: React.FC = () => {
     { icon: <BookOpen className="h-4 w-4" />, text: '享受旅行' }
   ];
   
+  const planNowItems = [
+    { icon: <Globe className="h-4 w-4" />, text: '地圖規劃' },
+    { icon: <Calendar className="h-4 w-4" />, text: '創建旅行' },
+    { icon: <Bot className="h-4 w-4" />, text: 'AI諮詢' }
+  ];
+  
   const features = [
     {
       icon: <Globe className="h-12 w-12 text-blue-600" />,
@@ -308,9 +314,28 @@ const Home: React.FC = () => {
                 </div>
               )}
             </div>
-            <Link to="/map-planning" className="px-4 py-3 rounded-full bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold hover:shadow-2xl hover:-translate-y-0.5 transition-all">
-              立即規劃
-            </Link>
+            <div className="relative">
+              <Link 
+                to="/map-planning" 
+                className="px-4 py-3 rounded-full bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold hover:shadow-2xl hover:-translate-y-0.5 transition-all"
+                onMouseEnter={() => setHoveredNavItem('plan-now')}
+                onMouseLeave={() => setHoveredNavItem(null)}
+              >
+                立即規劃
+              </Link>
+              {hoveredNavItem === 'plan-now' && (
+                <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 bg-white/70 backdrop-blur-sm border border-white/20 rounded-lg shadow-xl p-3 min-w-[125px] z-50">
+                  <div className="space-y-2">
+                    {planNowItems.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-white/20 transition-colors">
+                        <span className="text-gray-700">{item.icon}</span>
+                        <span className="text-sm text-gray-700">{item.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </nav>

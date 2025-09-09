@@ -15,6 +15,19 @@ interface Trip {
     spent: number;
     currency: string;
   };
+  createdAt?: string;
+  updatedAt?: string;
+  mapTripData?: {
+    points: Array<{
+      id: string;
+      name: string;
+      address: string;
+      location: { lat: number; lng: number; };
+      estimatedCost?: number;
+      estimatedTime?: number;
+      notes?: string;
+    }>;
+  };
 }
 
 const TripList: React.FC = () => {
@@ -57,7 +70,11 @@ const TripList: React.FC = () => {
       
       if (response.ok) {
         const data = await response.json();
-        setTrips(data);
+        // 只顯示有mapTripData的行程（地圖行程），按創建時間升序排列（最早的在前）
+        const mapTrips = data
+          .filter((trip: any) => trip.mapTripData)
+          .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        setTrips(mapTrips);
         
         // 將從後端獲取的數據保存到 localStorage 作為備份
         try {
@@ -77,7 +94,11 @@ const TripList: React.FC = () => {
         const backupData = localStorage.getItem('tripsBackup');
         if (backupData) {
           const parsedData = JSON.parse(backupData);
-          setTrips(parsedData);
+          // 只顯示有mapTripData的行程（地圖行程），按創建時間升序排列（最早的在前）
+          const mapTrips = parsedData
+            .filter((trip: any) => trip.mapTripData)
+            .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          setTrips(mapTrips);
               setError('⚠️ 離線模式：顯示上次同步的資料。某些功能可能受限。');
           console.log('從 localStorage 載入備份資料');
         } else {
@@ -155,7 +176,7 @@ const TripList: React.FC = () => {
           <div className="mb-2">
             <div className="relative mb-4">
               <div className="text-center">
-                <h1 className={`text-3xl font-bold text-[#e9eef2] mb-2 font-["LXGW-WenKai"]`}>我的旅行規劃</h1>
+                <h1 className={`text-3xl font-bold text-[#e9eef2] mb-2 font-["LXGW-WenKai"]`}>我的旅行列表</h1>
                 <p className="text-[#a9b6c3]">管理您的旅行計劃，查看行程安排和預算狀況</p>
               </div>
             </div>
@@ -178,14 +199,14 @@ const TripList: React.FC = () => {
           <div className="mb-2">
             <div className="relative mb-4">
               <div className="text-center">
-                <h1 className={`text-3xl font-bold text-[#e9eef2] mb-2 font-["LXGW-WenKai"]`}>我的旅行規劃</h1>
+                <h1 className={`text-3xl font-bold text-[#e9eef2] mb-2 font-["LXGW-WenKai"]`}>我的旅行列表</h1>
                 <p className="text-[#a9b6c3]">管理您的旅行計劃，查看行程安排和預算狀況</p>
               </div>
             </div>
           </div>
           <div className="space-y-6">
             <div className="relative mb-4">
-              <div className="absolute top-0 right-0 flex items-center space-x-3">
+              <div className="absolute -top-8 right-0 flex items-center space-x-3">
                 <Link
                   to="/create"
                   className="px-4 py-2 rounded-full bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold hover:shadow-lg transition-all inline-flex items-center space-x-2"
@@ -245,7 +266,7 @@ const TripList: React.FC = () => {
         <div className="mb-2">
           <div className="relative mb-4">
             <div className="text-center">
-              <h1 className={`text-3xl font-bold text-[#e9eef2] mb-2 font-["LXGW-WenKai"]`}>我的旅行規劃</h1>
+              <h1 className={`text-3xl font-bold text-[#e9eef2] mb-2 font-["LXGW-WenKai"]`}>我的旅行列表</h1>
               <p className="text-[#a9b6c3]">管理您的旅行計劃，查看行程安排和預算狀況</p>
               {error && error.includes('離線模式') && (
                 <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800 border border-yellow-200">
@@ -260,16 +281,14 @@ const TripList: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="relative mb-4">
-            <div className="absolute top-0 right-0 flex items-center space-x-3">
-              <Link
-                to="/create"
-                className="px-4 py-2 rounded-full bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold hover:shadow-lg transition-all inline-flex items-center space-x-2"
-              >
-                <Plus className="h-5 w-5" />
-                <span>創建旅行</span>
-              </Link>
-            </div>
+          <div className="flex justify-end mb-4">
+            <Link
+              to="/create"
+              className="px-4 py-2 rounded-full bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold hover:shadow-lg transition-all inline-flex items-center space-x-2"
+            >
+              <Plus className="h-5 w-5" />
+              <span>創建旅行</span>
+            </Link>
           </div>
 
           {trips.length === 0 ? (
@@ -292,7 +311,12 @@ const TripList: React.FC = () => {
             return (
               <div key={trip._id} className={`${cardColor} border border-gray-200 rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-200`}>
                 <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-semibold text-gray-900">{trip.title}</h3>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
+                      行程 {index + 1}
+                    </span>
+                    <h3 className="text-xl font-semibold text-gray-900">{trip.title}</h3>
+                  </div>
                   <div className="flex space-x-2">
                     <Link
                       to={`/trips/${trip._id}`}
@@ -311,17 +335,32 @@ const TripList: React.FC = () => {
 
                 <div className="space-y-3 mb-4">
                   <div className="flex items-center space-x-2 text-gray-800">
-                    <MapPin className="h-4 w-4 text-blue-600" />
-                    <span>{trip.destination}</span>
+                    <MapPin className="h-4 w-4 text-blue-600 flex-shrink-0 min-w-[16px] min-h-[16px]" />
+                    <span className="text-sm">
+                      {trip.mapTripData && trip.mapTripData.points && trip.mapTripData.points.length > 0
+                        ? trip.mapTripData.points
+                            .map((point: { name: string }) => point.name)
+                            .join(' → ')
+                            .length > 48
+                          ? trip.mapTripData.points
+                              .map((point: { name: string }) => point.name)
+                              .join(' → ')
+                              .substring(0, 48) + ' ...'
+                          : trip.mapTripData.points
+                              .map((point: { name: string }) => point.name)
+                              .join(' → ')
+                        : trip.destination
+                      }
+                    </span>
                   </div>
                   <div className="flex items-center space-x-2 text-gray-800">
-                    <Calendar className="h-4 w-4 text-green-600" />
+                    <Calendar className="h-4 w-4 text-green-600 flex-shrink-0 min-w-[16px] min-h-[16px]" />
                     <span>
                       {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2 text-gray-800">
-                    <DollarSign className="h-4 w-4 text-yellow-600" />
+                    <DollarSign className="h-4 w-4 text-yellow-600 flex-shrink-0 min-w-[16px] min-h-[16px]" />
                     <span>
                       {trip.budget.spent} / {trip.budget.total} {trip.budget.currency}
                     </span>
