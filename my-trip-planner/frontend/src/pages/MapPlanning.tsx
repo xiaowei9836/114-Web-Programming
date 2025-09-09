@@ -494,9 +494,9 @@ const MapPlanning: React.FC = () => {
         </div>
 
         <div className="bg-blue-50 rounded-lg shadow-lg p-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
+          <div className="grid grid-cols-3 gap-0">
             {/* 左側控制面板 */}
-            <div className="lg:col-span-1 space-y-0">
+            <div className="col-span-1 space-y-0">
             {/* 搜尋欄位 */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg shadow-md p-6">
               <h2 className={`text-xl font-semibold text-gray-800 mb-4 ${fontClass}`}>搜尋地點</h2>
@@ -812,7 +812,7 @@ const MapPlanning: React.FC = () => {
           </div>
 
           {/* 右側地圖區域 */}
-          <div className="lg:col-span-2">
+            <div className="col-span-2">
             <div className="bg-blue-50 border border-blue-200 rounded-lg shadow-md p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">地圖視圖</h2>
               <GoogleMap

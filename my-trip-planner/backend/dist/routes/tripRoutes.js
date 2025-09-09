@@ -26,5 +26,7 @@ router.post('/itinerary', tripController_1.addItineraryActivity);
 router.post('/reminders', tripController_1.addReminder);
 // 日誌管理
 router.post('/journal', tripController_1.addJournalEntry);
+router.post('/:id/journal', tripController_1.addJournalEntry);
+router.delete('/:id/journal/:journalId', tripController_1.deleteJournalEntry);
 exports.default = router;
 //# sourceMappingURL=tripRoutes.js.map

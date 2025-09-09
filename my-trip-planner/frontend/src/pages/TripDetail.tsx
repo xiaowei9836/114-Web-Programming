@@ -225,7 +225,7 @@ const TripDetail: React.FC = () => {
             <p className={`text-gray-700 mb-6 ${fontClass}`}>{trip.description}</p>
           )}
           
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 gap-6">
             <div className="flex items-center space-x-3">
               <Calendar className="h-6 w-6 text-green-600" />
               <div>
@@ -236,7 +236,7 @@ const TripDetail: React.FC = () => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-3 md:col-span-1">
+            <div className="flex items-center space-x-3 col-span-1">
               <DollarSign className="h-6 w-6 text-yellow-600" />
               <div>
                 <p className={`text-lg font-semibold text-gray-900 ${fontClass}`}>預算規劃</p>
@@ -249,7 +249,7 @@ const TripDetail: React.FC = () => {
         </div>
 
         {/* 主要內容區域 - 並排顯示 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+        <div className="grid grid-cols-2 gap-0">
           {/* 左側：目的地及預算花費 */}
           <div className="bg-blue-50 rounded-lg shadow-md p-6 border border-blue-100">
             <h3 className={`text-lg font-semibold text-gray-900 mb-4 flex items-center ${fontClass}`}>

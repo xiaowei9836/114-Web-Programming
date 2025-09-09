@@ -67,6 +67,43 @@ code {
   html, body, #root {
     background-color: #000000 !important;
   }
+  
+  /* 手機版強制橫式佈局 - 固定最小寬度 */
+  @media (max-width: 768px) {
+    html, body {
+      min-width: 1200px;
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: auto;
+    }
+    
+    #root {
+      min-width: 1200px;
+      width: 100%;
+    }
+    
+    /* 確保所有主要容器都有最小寬度 */
+    .container {
+      min-width: 1200px;
+      width: 100%;
+    }
+    
+    /* 防止文字自動調整大小 */
+    * {
+      -webkit-text-size-adjust: none;
+      text-size-adjust: none;
+    }
+    
+    /* 確保網格佈局在手機上保持固定 */
+    .grid {
+      min-width: 1200px;
+    }
+    
+    /* 強制按鈕和文字保持原始大小 */
+    button, input, textarea, select {
+      font-size: inherit !important;
+    }
+  }
 }
 
 @layer components {

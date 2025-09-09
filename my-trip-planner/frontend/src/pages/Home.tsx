@@ -405,13 +405,13 @@ const Home: React.FC = () => {
           <span className="inline-block text-[#3fb6b2] font-semibold tracking-widest uppercase text-base mb-6">
             沉浸式旅遊體驗 · AI 智能規劃
           </span>
-          <h1 className={`text-5xl md:text-7xl ${fontClass} leading-tight mb-6`}>
+          <h1 className={`text-7xl ${fontClass} leading-tight mb-6`}>
             規劃你的專屬旅行
           </h1>
-          <p className="text-xl md:text-2xl text-[#a9b6c3] max-w-3xl mx-auto mb-10 leading-relaxed">
+          <p className="text-2xl text-[#a9b6c3] max-w-3xl mx-auto mb-10 leading-relaxed">
             以奢華敘事風格，從地圖規劃、預算管理到旅行日記，自我實現旅行需求
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-row gap-4 justify-center">
             <Link
               to="/map-planning"
               className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold text-lg hover:shadow-2xl hover:-translate-y-1 transition-all"
@@ -445,7 +445,7 @@ const Home: React.FC = () => {
               ? 'opacity-100 translate-y-0' 
               : 'opacity-0 translate-y-8'
           }`}>
-            <h2 className={`${fontClass} text-4xl md:text-5xl mb-4`}>
+            <h2 className={`${fontClass} text-5xl mb-4`}>
               功能亮點
             </h2>
             <p className="text-xl text-[#a9b6c3] max-w-2xl mx-auto">
@@ -453,7 +453,7 @@ const Home: React.FC = () => {
             </p>
           </div>
           
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 gap-6">
             {features.map((feature, index) => (
               <div 
                 key={index}
@@ -499,7 +499,7 @@ const Home: React.FC = () => {
               ? 'opacity-100 translate-y-0' 
               : 'opacity-0 translate-y-8'
           }`}>
-            <h2 className={`${fontClass} text-4xl md:text-5xl mb-4`}>
+            <h2 className={`${fontClass} text-5xl mb-4`}>
               靈感圖集
             </h2>
             <p className="text-xl text-[#a9b6c3] max-w-2xl mx-auto">
@@ -521,8 +521,8 @@ const Home: React.FC = () => {
           </div>
 
           {/* 小圖網格 - 調整為DOCTYPE.html的2fr 1fr比例和16:10比例 */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6" style={{ marginTop: '32px' }}>
-            <div className={`md:col-span-2 transition-all duration-1000 delay-700 ${
+          <div className="grid grid-cols-3 gap-6" style={{ marginTop: '32px' }}>
+            <div className={`col-span-2 transition-all duration-1000 delay-700 ${
               isGalleryVisible 
                 ? 'opacity-100 translate-y-0 scale-100' 
                 : 'opacity-0 translate-y-12 scale-95'
@@ -583,7 +583,7 @@ const Home: React.FC = () => {
               ? 'opacity-100 translate-y-0' 
               : 'opacity-0 translate-y-8'
           }`}>
-            <h2 className={`text-4xl md:text-5xl ${fontClass} mb-4`}>
+            <h2 className={`text-5xl ${fontClass} mb-4`}>
               快速開始
             </h2>
             <p className="text-xl text-[#a9b6c3] max-w-2xl mx-auto">

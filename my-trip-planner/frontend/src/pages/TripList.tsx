@@ -305,7 +305,7 @@ const TripList: React.FC = () => {
               </Link>
             </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 grid-cols-3">
           {trips.map((trip, index) => {
             const cardColor = cardColors[index % cardColors.length];
             return (

@@ -36,7 +36,6 @@ export interface ITrip extends Document {
     mapTripData?: {
         id: string;
         createdAt: string;
-        customName?: string;
         totalPoints: number;
         totalEstimatedCost: number;
         totalEstimatedTime: number;

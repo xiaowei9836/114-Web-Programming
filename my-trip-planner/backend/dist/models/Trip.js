@@ -126,7 +126,6 @@ const TripSchema = new mongoose_1.Schema({
     mapTripData: {
         id: String,
         createdAt: String,
-        customName: String, // 自定義行程名稱
         totalPoints: Number,
         totalEstimatedCost: Number,
         totalEstimatedTime: Number,
