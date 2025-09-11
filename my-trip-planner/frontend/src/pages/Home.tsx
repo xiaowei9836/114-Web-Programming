@@ -25,6 +25,9 @@ const Home: React.FC = () => {
   const [scrollLeft, setScrollLeft] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
+  // 動畫控制狀態
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+  
   // 直接使用霞鶩文楷字體
   const fontClass = 'font-["LXGW-WenKai"]';
   
@@ -54,37 +57,37 @@ const Home: React.FC = () => {
     {
       icon: <Globe className="h-12 w-12 text-blue-500" />,
       title: '地圖規劃',
-      description: '規劃專屬旅行路線，探索目的景點和餐廳',
+      description: '規劃專屬旅行路線\n探索目的景點和餐廳',
       backgroundImage: '/images/card01.jpg'
     },
     {
       icon: <Calendar className="h-12 w-12 text-green-500" />,
       title: '行程安排',
-      description: '建立詳細行程，包含活動、時間和住宿等',
+      description: '建立詳細行程\n包含活動、時間和住宿等',
       backgroundImage: '/images/card02.jpg'
     },
     {
       icon: <DollarSign className="h-12 w-12 text-yellow-500" />,
       title: '預算管理',
-      description: '追蹤旅行支出，設定預算限制和管理財務',
+      description: '追蹤旅行支出\n設定預算限制和管理財務',
       backgroundImage: '/images/card03.jpg'
     },
     {
       icon: <Bell className="h-12 w-12 text-purple-500" />,
       title: '旅行提醒',
-      description: '設置重要提醒，如航班時間、飯店入住等',
+      description: '設置重要提醒\n如航班時間、飯店入住等',
       backgroundImage: '/images/card04.jpg'
     },
     {
       icon: <BookOpen className="h-12 w-12 text-red-500" />,
       title: '旅行日記',
-      description: '記錄旅行中的精彩時刻，分享照片與回憶',
+      description: '記錄旅行中的精彩時刻\n分享照片與回憶',
       backgroundImage: '/images/card05.jpg'
     },
     {
       icon: <Bot className="h-12 w-12 text-indigo-500" />,
       title: 'AI 諮詢',
-      description: '智能助理，提供旅遊行程、或預算等建議',
+      description: '智能助理\n提供旅遊行程、或預算等建議',
       backgroundImage: '/images/card06.jpg'
     }
   ];
@@ -142,6 +145,10 @@ const Home: React.FC = () => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) {
           setIsFeaturesVisible(true);
+          setShouldAnimate(true);
+        } else {
+          // 當離開視窗時重置動畫狀態，讓下次進入時能重新觸發
+          setShouldAnimate(false);
         }
       });
     }, observerOptions);
@@ -514,7 +521,7 @@ const Home: React.FC = () => {
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             <div 
-              className={`flex gap-3 ${!isDragging ? 'animate-scroll' : ''}`} 
+              className={`flex gap-3 ${!isDragging && shouldAnimate ? 'animate-scroll' : ''}`} 
               style={{ width: 'calc(120% + 0.5rem)' }}
             >
               {/* 第一組卡片 */}
@@ -530,9 +537,9 @@ const Home: React.FC = () => {
                     transitionDelay: `${(index + 1) * 100}ms`,
                     backgroundImage: `url(${feature.backgroundImage})`,
                     backgroundSize: 'cover',
-                    backgroundPosition: '73% 35%',
+                    backgroundPosition: '60% 35%',
                     backgroundRepeat: 'no-repeat',
-                    width: 'calc(25% - 0.5rem)'
+                    width: 'calc(20% - 0.5rem)'
                   }}
                 >
                   {/* 背景遮罩層，確保文字可讀性 */}
@@ -548,7 +555,7 @@ const Home: React.FC = () => {
                     <h3 className="text-xl font-semibold mb-3 text-center text-white group-hover:text-white transition-colors">
                       {feature.title}
                     </h3>
-                    <p className="text-white text-opacity-90 leading-relaxed text-center group-hover:text-white transition-colors">
+                    <p className="text-white text-opacity-90 leading-relaxed text-center group-hover:text-white transition-colors whitespace-pre-line">
                       {feature.description}
                     </p>
                   </div>
@@ -569,7 +576,7 @@ const Home: React.FC = () => {
                     backgroundSize: 'cover',
                     backgroundPosition: '73% 35%',
                     backgroundRepeat: 'no-repeat',
-                    width: 'calc(25% - 0.5rem)'
+                    width: 'calc(20% - 0.5rem)'
                   }}
                 >
                   {/* 背景遮罩層，確保文字可讀性 */}
@@ -585,7 +592,7 @@ const Home: React.FC = () => {
                     <h3 className="text-xl font-semibold mb-3 text-center text-white group-hover:text-white transition-colors">
                       {feature.title}
                     </h3>
-                    <p className="text-white text-opacity-90 leading-relaxed text-center group-hover:text-white transition-colors">
+                    <p className="text-white text-opacity-90 leading-relaxed text-center group-hover:text-white transition-colors whitespace-pre-line">
                       {feature.description}
                     </p>
                   </div>

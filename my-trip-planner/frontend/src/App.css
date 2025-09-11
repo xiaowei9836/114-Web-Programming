@@ -48,14 +48,23 @@
   10% {
     transform: translateX(0);
   }
-  100% {
-    transform: translateX(-50%);
+  /* 40% {
+    transform: translateX(-38%);
+  }
+  70% {
+    transform: translateX(-38%);
+  } */
+  85% {
+    transform: translateX(-38%);
+  }
+  95% {
+    transform: translateX(-38%);
   }
 }
 
 .animate-scroll {
-  animation: scroll 30s linear infinite;
-  animation-iteration-count: infinite;
+  animation: scroll 20s linear;
+  animation-iteration-count: 3;
   animation-fill-mode: none;
 }
 
