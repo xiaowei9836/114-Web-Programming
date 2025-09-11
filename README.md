@@ -228,7 +228,7 @@ npm run test
 - **備用網址**: [https://my-trip-planner-kuanweis-projects.vercel.app/](https://my-trip-planner-kuanweis-projects.vercel.app/)
 - **開發網址**: [https://my-trip-planner-nick93290-7931-kuanweis-projects.vercel.app/](https://my-trip-planner-nick93290-7931-kuanweis-projects.vercel.app/)
 - **最新部署**: [https://my-trip-planner-4cia4r8j4-kuanweis-projects.vercel.app/](https://my-trip-planner-4cia4r8j4-kuanweis-projects.vercel.app/)
-
+ 
 ---
 
 ## 🤝 貢獻指南
@@ -251,7 +251,7 @@ npm run test
 
 ## 🔄 更新日誌
 
-### v1.0.0 (2025-09-11)
+### v1.0.1 (2025-09-11)
 - ✨ 初始版本發布
 - ✨ 基本旅行管理功能
 - ✨ Google Maps API 整合
