@@ -120,7 +120,7 @@ trip-planner/
 - ✅ 目的地管理
 
 ### 2. 地圖規劃
-- ✅ Google Maps 整合
+- ✅ Google Maps API 整合
 - ✅ 地點標記和搜尋
 - ✅ 路線規劃
 - ✅ 地點預算設定
@@ -223,6 +223,12 @@ npm run test
 - **後端**: Render 雲端部署
 - **資料庫**: MongoDB Atlas
 
+### 線上網址
+- **主要網址**: [https://my-trip-planner-azure.vercel.app/](https://my-trip-planner-azure.vercel.app/)
+- **備用網址**: [https://my-trip-planner-kuanweis-projects.vercel.app/](https://my-trip-planner-kuanweis-projects.vercel.app/)
+- **開發網址**: [https://my-trip-planner-nick93290-7931-kuanweis-projects.vercel.app/](https://my-trip-planner-nick93290-7931-kuanweis-projects.vercel.app/)
+- **最新部署**: [https://my-trip-planner-4cia4r8j4-kuanweis-projects.vercel.app/](https://my-trip-planner-4cia4r8j4-kuanweis-projects.vercel.app/)
+
 ### 環境變數
 詳見 [部署說明文檔](./DEPLOYMENT.md)
 
@@ -246,27 +252,12 @@ npm run test
 
 ---
 
-## 📄 授權
-
-本專案採用 MIT 授權條款。詳見 [LICENSE](LICENSE) 檔案。
-
----
-
-## 📞 支援
-
-如有問題或建議，請：
-- 創建 GitHub Issue
-- 發送郵件至 support@trip-planner.com
-- 查看文檔目錄中的詳細說明
-
----
-
 ## 🔄 更新日誌
 
-### v1.0.0 (2024-01-01)
+### v1.0.0 (2025-09-11)
 - ✨ 初始版本發布
 - ✨ 基本旅行管理功能
-- ✨ Google Maps 整合
+- ✨ Google Maps API 整合
 - ✨ AI 聊天機器人
 - ✨ 多貨幣支援
 
