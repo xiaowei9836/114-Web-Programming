@@ -229,9 +229,6 @@ npm run test
 - **開發網址**: [https://my-trip-planner-nick93290-7931-kuanweis-projects.vercel.app/](https://my-trip-planner-nick93290-7931-kuanweis-projects.vercel.app/)
 - **最新部署**: [https://my-trip-planner-4cia4r8j4-kuanweis-projects.vercel.app/](https://my-trip-planner-4cia4r8j4-kuanweis-projects.vercel.app/)
 
-### 環境變數
-詳見 [部署說明文檔](./DEPLOYMENT.md)
-
 ---
 
 ## 🤝 貢獻指南
