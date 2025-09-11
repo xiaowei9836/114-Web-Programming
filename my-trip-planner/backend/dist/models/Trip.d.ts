@@ -33,6 +33,25 @@ export interface ITrip extends Document {
         photos: string[];
         mood: 'excellent' | 'good' | 'okay' | 'bad';
     }>;
+    mapTripData?: {
+        id: string;
+        createdAt: string;
+        totalPoints: number;
+        totalEstimatedCost: number;
+        totalEstimatedTime: number;
+        points: Array<{
+            order: number;
+            name: string;
+            address: string;
+            coordinates: {
+                lat: number;
+                lng: number;
+            };
+            estimatedCost?: number;
+            estimatedTime?: number;
+            notes?: string;
+        }>;
+    };
     createdAt: Date;
     updatedAt: Date;
 }

@@ -34,6 +34,27 @@ export interface ITrip extends Document {
     photos: string[];
     mood: 'excellent' | 'good' | 'okay' | 'bad';
   }>;
+  // 地圖行程數據
+  mapTripData?: {
+    id: string;
+    createdAt: string;
+    totalPoints: number;
+    totalEstimatedCost: number;
+    totalEstimatedTime: number;
+    points: Array<{
+      order: number;
+      name: string;
+      address: string;
+      coordinates: {
+        lat: number;
+        lng: number;
+      };
+      estimatedCost?: number;
+      estimatedTime?: number;
+      notes?: string;
+      currency?: string;
+    }>;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -125,7 +146,28 @@ const TripSchema: Schema = new Schema({
       enum: ['excellent', 'good', 'okay', 'bad'],
       default: 'good'
     }
-  }]
+  }],
+  // 地圖行程數據
+  mapTripData: {
+    id: String,
+    createdAt: String,
+    totalPoints: Number,
+    totalEstimatedCost: Number,
+    totalEstimatedTime: Number,
+    points: [{
+      order: Number,
+      name: String,
+      address: String,
+      coordinates: {
+        lat: Number,
+        lng: Number
+      },
+      estimatedCost: Number,
+      estimatedTime: Number,
+      notes: String,
+      currency: String
+    }]
+  }
 }, {
   timestamps: true
 });

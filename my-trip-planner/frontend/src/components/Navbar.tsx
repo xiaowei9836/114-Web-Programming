@@ -1,81 +1,81 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MapPin, Plus, List, Home, Globe } from 'lucide-react';
+import { Bot } from 'lucide-react';
+import { useAIChat } from '../contexts/AIChatContext';
 
 const Navbar: React.FC = () => {
   const location = useLocation();
+  const { openChat, isOpen } = useAIChat();
+  
+  // 直接使用霞鶩文楷字體
+  const fontClass = 'font-["LXGW-WenKai"]';
 
   const isActive = (path: string) => {
+    if (path === '/trips') {
+      // 對於"我的旅行"，匹配 /trips 和 /trips/:id
+      return location.pathname === '/trips' || location.pathname.startsWith('/trips/');
+    }
     return location.pathname === path;
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center space-x-2">
-            <MapPin className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">我的旅行規劃器</span>
+    <nav className="bg-black/60 backdrop-blur-md shadow-2xl">
+      <div className="w-full max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <Link to="/" className={`${fontClass} text-2xl font-semibold`}>
+          <span className="text-[#c7a559]">Voyage</span> <span className="text-white">Planner</span>
+        </Link>
+        <div className="flex items-center gap-5">
+          <Link 
+            to="/" 
+            className={`px-4 py-2 rounded-full transition-colors ${fontClass} ${
+              isActive('/')
+                ? 'bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold'
+                : 'border border-white/20 hover:bg-white/10 text-white'
+            }`}
+          >
+            首頁
           </Link>
-          
-          <div className="hidden md:flex space-x-8">
-            <Link
-              to="/"
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive('/') 
-                  ? 'text-blue-600 bg-blue-50' 
-                  : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-              }`}
-            >
-              <Home className="h-4 w-4" />
-              <span>首頁</span>
-            </Link>
-            
-            <Link
-              to="/map-planning"
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive('/map-planning') 
-                  ? 'text-blue-600 bg-blue-50' 
-                  : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-              }`}
-            >
-              <Globe className="h-4 w-4" />
-              <span>地圖規劃</span>
-            </Link>
-            
-            <Link
-              to="/trips"
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive('/trips') 
-                  ? 'text-blue-600 bg-blue-50' 
-                  : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-              }`}
-            >
-              <List className="h-4 w-4" />
-              <span>我的旅行</span>
-            </Link>
-            
-            <Link
-              to="/create"
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                isActive('/create') 
-                  ? 'text-blue-600 bg-blue-50' 
-                  : 'text-gray-700 hover:text-blue-600 hover:bg-gray-50'
-              }`}
-            >
-              <Plus className="h-4 w-4" />
-              <span>創建旅行</span>
-            </Link>
-          </div>
-
-          {/* 移動端菜單按鈕 */}
-          <div className="md:hidden">
-            <button className="text-gray-700 hover:text-blue-600 p-2">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-          </div>
+          <Link 
+            to="/map-planning" 
+            className={`px-4 py-2 rounded-full transition-colors ${fontClass} ${
+              isActive('/map-planning')
+                ? 'bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold'
+                : 'border border-white/20 hover:bg-white/10 text-white'
+            }`}
+          >
+            地圖規劃
+          </Link>
+          <Link 
+            to="/trips" 
+            className={`px-4 py-2 rounded-full transition-colors ${fontClass} ${
+              isActive('/trips')
+                ? 'bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold'
+                : 'border border-white/20 hover:bg-white/10 text-white'
+            }`}
+          >
+            我的旅行
+          </Link>
+          <Link 
+            to="/create" 
+            className={`px-4 py-2 rounded-full transition-colors ${fontClass} ${
+              isActive('/create')
+                ? 'bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold'
+                : 'border border-white/20 hover:bg-white/10 text-white'
+            }`}
+          >
+            創建旅行
+          </Link>
+          <button
+            onClick={openChat}
+            className={`px-4 py-2 rounded-full transition-colors inline-flex items-center gap-2 ${fontClass} ${
+              isOpen
+                ? 'bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold'
+                : 'border border-white/20 hover:bg-white/10 text-white'
+            }`}
+          >
+            <Bot className="h-4 w-4" />
+            AI諮詢
+          </button>
         </div>
       </div>
     </nav>

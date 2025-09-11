@@ -12,7 +12,7 @@ services:
         value: 10000
       - key: MONGODB_URI
         sync: false
-    healthCheckPath: /api/health
+    healthCheckPath: /health
     autoDeploy: true
     buildFilter:
       paths:

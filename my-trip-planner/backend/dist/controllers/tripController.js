@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.addJournalEntry = exports.addReminder = exports.addItineraryActivity = exports.deleteTrip = exports.updateTrip = exports.createTrip = exports.getTripById = exports.getAllTrips = void 0;
+exports.deleteJournalEntry = exports.addJournalEntry = exports.addReminder = exports.addItineraryActivity = exports.deleteTrip = exports.updateTrip = exports.createTrip = exports.getTripById = exports.getAllTrips = void 0;
 const Trip_1 = __importDefault(require("../models/Trip"));
 // 获取所有旅行
 const getAllTrips = async (req, res) => {
@@ -125,11 +125,21 @@ exports.addReminder = addReminder;
 // 添加日记条目
 const addJournalEntry = async (req, res) => {
     try {
-        const { tripId, journalEntry } = req.body;
+        // 支持两种请求格式：/:id/journal 和 /journal
+        const tripId = req.params.id || req.body.tripId;
+        const journalEntry = req.body.journalEntry || req.body;
+        if (!tripId) {
+            res.status(400).json({ message: '缺少旅行ID' });
+            return;
+        }
         const trip = await Trip_1.default.findById(tripId);
         if (!trip) {
             res.status(404).json({ message: '旅行不存在' });
             return;
+        }
+        // 确保 journal 数组存在
+        if (!trip.journal) {
+            trip.journal = [];
         }
         trip.journal.push(journalEntry);
         const updatedTrip = await trip.save();
@@ -141,4 +151,34 @@ const addJournalEntry = async (req, res) => {
     }
 };
 exports.addJournalEntry = addJournalEntry;
+// 删除日记条目
+const deleteJournalEntry = async (req, res) => {
+    try {
+        const { id, journalId } = req.params;
+        const trip = await Trip_1.default.findById(id);
+        if (!trip) {
+            res.status(404).json({ message: '旅行不存在' });
+            return;
+        }
+        // 确保 journal 数组存在
+        if (!trip.journal) {
+            res.status(404).json({ message: '日記不存在' });
+            return;
+        }
+        // 查找並刪除指定的日記條目
+        const journalIndex = trip.journal.findIndex((entry, index) => index.toString() === journalId || entry.title === journalId);
+        if (journalIndex === -1) {
+            res.status(404).json({ message: '日記條目不存在' });
+            return;
+        }
+        trip.journal.splice(journalIndex, 1);
+        const updatedTrip = await trip.save();
+        res.status(200).json(updatedTrip);
+    }
+    catch (error) {
+        const errorMessage = error instanceof Error ? error.message : '未知错误';
+        res.status(400).json({ message: '删除日记条目失败', error: errorMessage });
+    }
+};
+exports.deleteJournalEntry = deleteJournalEntry;
 //# sourceMappingURL=tripController.js.map

@@ -6,6 +6,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const tripController_1 = require("../controllers/tripController");
 const router = express_1.default.Router();
+// 健康檢查端點
+router.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        message: '後端服務運行正常'
+    });
+});
 // 基礎 CRUD 操作
 router.get('/', tripController_1.getAllTrips);
 router.get('/:id', tripController_1.getTripById);
@@ -16,7 +24,9 @@ router.delete('/:id', tripController_1.deleteTrip);
 router.post('/itinerary', tripController_1.addItineraryActivity);
 // 提醒管理
 router.post('/reminders', tripController_1.addReminder);
-// 日記管理
+// 日誌管理
 router.post('/journal', tripController_1.addJournalEntry);
+router.post('/:id/journal', tripController_1.addJournalEntry);
+router.delete('/:id/journal/:journalId', tripController_1.deleteJournalEntry);
 exports.default = router;
 //# sourceMappingURL=tripRoutes.js.map

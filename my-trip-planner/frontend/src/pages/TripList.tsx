@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, MapPin, Calendar, DollarSign, Edit, Trash2, Bot } from 'lucide-react';
+import { Plus, MapPin, Calendar, DollarSign, Edit, Trash2, MessageCircle } from 'lucide-react';
 import { useAIChat } from '../contexts/AIChatContext';
 
 interface Trip {
@@ -15,16 +15,40 @@ interface Trip {
     spent: number;
     currency: string;
   };
+  createdAt?: string;
+  updatedAt?: string;
+  mapTripData?: {
+    points: Array<{
+      id: string;
+      name: string;
+      address: string;
+      location: { lat: number; lng: number; };
+      estimatedCost?: number;
+      estimatedTime?: number;
+      notes?: string;
+      currency?: string;
+    }>;
+  };
 }
 
 const TripList: React.FC = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { openChat } = useAIChat();
+  const { openChat, isMinimized } = useAIChat();
 
   // 後端 API 端點配置
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+
+  // 旅行卡片背景顏色數組
+  const cardColors = [
+    'bg-[#E8F2FF]', // 淺藍色
+    'bg-[#E8F8F0]', // 淺綠色
+    'bg-[#FFF8E8]', // 淺黃色
+    'bg-[#F8E8FF]', // 淺紫色
+    'bg-[#FFE8E8]', // 淺紅色
+    'bg-[#E8F2FF]', // 淺藍色 (重複)
+  ];
 
   useEffect(() => {
     fetchTrips();
@@ -47,7 +71,11 @@ const TripList: React.FC = () => {
       
       if (response.ok) {
         const data = await response.json();
-        setTrips(data);
+        // 只顯示有mapTripData的行程（地圖行程），按創建時間升序排列（最早的在前）
+        const mapTrips = data
+          .filter((trip: any) => trip.mapTripData)
+          .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        setTrips(mapTrips);
         
         // 將從後端獲取的數據保存到 localStorage 作為備份
         try {
@@ -67,9 +95,13 @@ const TripList: React.FC = () => {
         const backupData = localStorage.getItem('tripsBackup');
         if (backupData) {
           const parsedData = JSON.parse(backupData);
-          setTrips(parsedData);
-          setError('⚠️ 離線模式：顯示上次同步的數據。某些功能可能受限。');
-          console.log('從 localStorage 載入備份數據');
+          // 只顯示有mapTripData的行程（地圖行程），按創建時間升序排列（最早的在前）
+          const mapTrips = parsedData
+            .filter((trip: any) => trip.mapTripData)
+            .sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+          setTrips(mapTrips);
+              setError('⚠️ 離線模式：顯示上次同步的資料。某些功能可能受限。');
+          console.log('從 localStorage 載入備份資料');
         } else {
           // 如果沒有備份數據，設置具體錯誤信息
           if (error instanceof Error) {
@@ -78,7 +110,7 @@ const TripList: React.FC = () => {
             } else if (error.message.includes('Failed to fetch')) {
               setError('無法連接到後端服務，請檢查後端是否正在運行');
             } else if (error.message.includes('获取旅行列表失败')) {
-              setError('資料庫連接問題，請檢查 MongoDB 服務狀態。如果您是開發者，請確保 MongoDB 已啟動；如果是用戶，請稍後再試');
+              setError('資料庫連接問題，請檢查 MongoDB 服務狀態。如果您是開發者，請確保 MongoDB 已啟動；如果是使用者，請稍後再試');
             } else {
               setError(`載入失敗: ${error.message}`);
             }
@@ -95,7 +127,7 @@ const TripList: React.FC = () => {
           } else if (error.message.includes('Failed to fetch')) {
             setError('無法連接到後端服務，請檢查後端是否正在運行');
           } else if (error.message.includes('获取旅行列表失败')) {
-            setError('資料庫連接問題，請檢查 MongoDB 服務狀態。如果您是開發者，請確保 MongoDB 已啟動；如果是用戶，請稍後再試');
+            setError('資料庫連接問題，請檢查 MongoDB 服務狀態。如果您是開發者，請確保 MongoDB 已啟動；如果是使用者，請稍後再試');
           } else {
             setError(`載入失敗: ${error.message}`);
           }
@@ -138,12 +170,47 @@ const TripList: React.FC = () => {
     return diffDays;
   };
 
+  // 計算地點預算總和（按貨幣分組）
+  const calculateTotalSpent = (trip: Trip) => {
+    if (!trip.mapTripData?.points) return [];
+    
+    const currencyTotals: { [key: string]: number } = {};
+    
+    trip.mapTripData.points.forEach(point => {
+      const cost = point.estimatedCost || 0;
+      const currency = (point as any).currency || trip.budget.currency;
+      
+      if (currencyTotals[currency]) {
+        currencyTotals[currency] += cost;
+      } else {
+        currencyTotals[currency] = cost;
+      }
+    });
+    
+    return Object.entries(currencyTotals)
+      .filter(([_, amount]) => amount > 0)
+      .map(([currency, amount]) => `${amount} ${currency}`)
+      .join(', ');
+  };
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">正在載入旅行列表...</p>
+      <div className={`min-h-screen bg-black text-[#e9eef2] font-["LXGW-WenKai"]`}>
+        <div className="container mx-auto px-2 py-0">
+          <div className="mb-2">
+            <div className="relative mb-4">
+              <div className="text-center">
+                <h1 className={`text-3xl font-bold text-[#e9eef2] mb-2 font-["LXGW-WenKai"]`}>我的旅行列表</h1>
+                <p className="text-[#a9b6c3]">管理您的旅行計劃，查看行程安排和預算狀況</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-center items-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#c7a559] mx-auto mb-4"></div>
+              <p className="text-[#a9b6c3]">正在載入旅行清單...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -151,53 +218,66 @@ const TripList: React.FC = () => {
 
   if (error && trips.length === 0) {
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">我的旅行</h1>
-          <Link
-            to="/create"
-            className="btn-primary inline-flex items-center space-x-2"
-          >
-            <Plus className="h-5 w-5" />
-            <span>創建旅行</span>
-          </Link>
-        </div>
+      <div className={`min-h-screen bg-black text-[#e9eef2] font-["LXGW-WenKai"]`}>
+        <div className="container mx-auto px-2 py-0">
+          <div className="mb-2">
+            <div className="relative mb-4">
+              <div className="text-center">
+                <h1 className={`text-3xl font-bold text-[#e9eef2] mb-2 font-["LXGW-WenKai"]`}>我的旅行列表</h1>
+                <p className="text-[#a9b6c3]">管理您的旅行計劃，查看行程安排和預算狀況</p>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-6">
+            <div className="relative mb-4">
+              <div className="absolute -top-8 right-0 flex items-center space-x-3">
+                <Link
+                  to="/create"
+                  className="px-4 py-2 rounded-full bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold hover:shadow-lg transition-all inline-flex items-center space-x-2"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span>創建旅行</span>
+                </Link>
+              </div>
+            </div>
         
-        <div className={`text-center py-16 rounded-lg border ${
-          error.includes('離線模式') 
-            ? 'bg-yellow-50 border-yellow-200' 
-            : 'bg-red-50 border-red-200'
-        }`}>
-          <div className={`mb-4 ${
-            error.includes('離線模式') ? 'text-yellow-600' : 'text-red-600'
-          }`}>
-            {error.includes('離線模式') ? (
-              <svg className="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            ) : (
-              <svg className="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            )}
-            <h3 className="text-xl font-semibold mb-2">
-              {error.includes('離線模式') ? '離線模式' : '載入失敗'}
-            </h3>
-            <p className={`mb-4 ${
-              error.includes('離線模式') ? 'text-yellow-700' : 'text-red-700'
+            <div className={`text-center py-16 rounded-lg border ${
+              error.includes('離線模式') 
+                ? 'bg-yellow-50 border-yellow-200' 
+                : 'bg-red-50 border-red-200'
             }`}>
-              {error}
-            </p>
-            <button 
-              onClick={fetchTrips}
-              className={`${
-                error.includes('離線模式') 
-                  ? 'bg-yellow-600 hover:bg-yellow-700' 
-                  : 'btn-primary'
-              } text-white px-4 py-2 rounded-lg transition-colors`}
-            >
-              {error.includes('離線模式') ? '重新同步' : '重試'}
-            </button>
+              <div className={`mb-4 ${
+                error.includes('離線模式') ? 'text-yellow-600' : 'text-red-600'
+              }`}>
+                {error.includes('離線模式') ? (
+                  <svg className="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                ) : (
+                  <svg className="h-16 w-16 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                )}
+                <h3 className="text-xl font-semibold mb-2">
+                  {error.includes('離線模式') ? '離線模式' : '載入失敗'}
+                </h3>
+                <p className={`mb-4 ${
+                  error.includes('離線模式') ? 'text-yellow-700' : 'text-red-700'
+                }`}>
+                  {error}
+                </p>
+                <button 
+                  onClick={fetchTrips}
+                  className={`${
+                    error.includes('離線模式') 
+                      ? 'bg-yellow-600 hover:bg-yellow-700' 
+                      : 'btn-primary'
+                  } text-white px-4 py-2 rounded-lg transition-colors`}
+                >
+                  {error.includes('離線模式') ? '重新同步' : '重試'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -205,114 +285,147 @@ const TripList: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="relative mb-4">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">我的旅行</h1>
-          <p className="text-gray-600">管理您的旅行計劃，查看行程安排和預算狀況</p>
-          {error && error.includes('離線模式') && (
-            <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800 border border-yellow-200">
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-              離線模式 - 顯示緩存數據
+    <div className={`min-h-screen bg-black text-[#e9eef2] font-["LXGW-WenKai"]`}>
+      <div className="container mx-auto px-2 py-0">
+        <div className="mb-2">
+          <div className="relative mb-4">
+            <div className="text-center">
+              <h1 className={`text-3xl font-bold text-[#e9eef2] mb-2 font-["LXGW-WenKai"]`}>我的旅行列表</h1>
+              <p className="text-[#a9b6c3]">管理您的旅行計劃，查看行程安排和預算狀況</p>
+              {error && error.includes('離線模式') && (
+                <div className="mt-2 inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-100 text-yellow-800 border border-yellow-200">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  離線模式 - 顯示緩存資料
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
-        <div className="absolute top-0 right-0 flex items-center space-x-3">
-          <Link
-            to="/create"
-            className="btn-primary inline-flex items-center space-x-2"
-          >
-            <Plus className="h-5 w-5" />
-            <span>創建旅行</span>
-          </Link>
-          <button
-            onClick={openChat}
-            className="btn-secondary inline-flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white"
-          >
-            <Bot className="h-5 w-5" />
-            <span>AI諮詢</span>
-          </button>
+
+        <div className="space-y-6">
+          <div className="flex justify-end mb-4">
+            <Link
+              to="/create"
+              className="px-4 py-2 rounded-full bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold hover:shadow-lg transition-all inline-flex items-center space-x-2"
+            >
+              <Plus className="h-5 w-5" />
+              <span>創建旅行</span>
+            </Link>
+          </div>
+
+          {trips.length === 0 ? (
+            <div className="text-center py-16">
+              <MapPin className="h-24 w-24 text-[#a9b6c3] mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-[#e9eef2] mb-2">
+                還沒有旅行計劃
+              </h3>
+              <p className="text-[#a9b6c3] mb-6">
+                開始創建您的第一個旅行計劃吧！
+              </p>
+              <Link to="/create" className="px-6 py-3 rounded-full bg-gradient-to-r from-[#c7a559] to-[#efc56a] text-[#162022] font-semibold hover:shadow-lg transition-all">
+                創建旅行
+              </Link>
+            </div>
+      ) : (
+        <div className="grid gap-6 grid-cols-3">
+          {trips.map((trip, index) => {
+            const cardColor = cardColors[index % cardColors.length];
+            return (
+              <div key={trip._id} className={`${cardColor} border border-gray-200 rounded-lg shadow-md p-6 hover:shadow-lg transition-all duration-200`}>
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
+                      行程 {index + 1}
+                    </span>
+                    <h3 className="text-xl font-semibold text-gray-900">{trip.title}</h3>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Link
+                      to={`/trips/${trip._id}`}
+                      className="text-gray-700 hover:text-[#3fb6b2] transition-colors"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Link>
+                    <button
+                      onClick={() => deleteTrip(trip._id)}
+                      className="text-gray-700 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-4">
+                  <div className="flex items-center space-x-2 text-gray-800">
+                    <MapPin className="h-4 w-4 text-blue-600 flex-shrink-0 min-w-[16px] min-h-[16px]" />
+                    <span className="text-sm">
+                      {trip.mapTripData && trip.mapTripData.points && trip.mapTripData.points.length > 0
+                        ? trip.mapTripData.points
+                            .map((point: { name: string }) => point.name)
+                            .join(' → ')
+                            .length > 48
+                          ? trip.mapTripData.points
+                              .map((point: { name: string }) => point.name)
+                              .join(' → ')
+                              .substring(0, 48) + ' ...'
+                          : trip.mapTripData.points
+                              .map((point: { name: string }) => point.name)
+                              .join(' → ')
+                        : trip.destination
+                      }
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-gray-800">
+                    <Calendar className="h-4 w-4 text-green-600 flex-shrink-0 min-w-[16px] min-h-[16px]" />
+                    <span>
+                      {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2 text-gray-800">
+                    <DollarSign className="h-4 w-4 text-yellow-600 flex-shrink-0 min-w-[16px] min-h-[16px]" />
+                    <span>
+                      {calculateTotalSpent(trip).length > 0 ? calculateTotalSpent(trip) : '0 ' + trip.budget.currency} / {trip.budget.total} {trip.budget.currency}
+                    </span>
+                  </div>
+                </div>
+
+                {trip.description && (
+                  <p className="text-gray-800 text-sm mb-4 line-clamp-2">
+                    {trip.description}
+                  </p>
+                )}
+
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-800">
+                    {calculateDuration(trip.startDate, trip.endDate)} 天
+                  </span>
+                  <Link
+                    to={`/trips/${trip._id}`}
+                    className="text-[#3fb6b2] hover:text-[#3fb6b2]/80 font-medium text-sm"
+                  >
+                    查看詳情 →
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
         </div>
       </div>
 
-      {trips.length === 0 ? (
-        <div className="text-center py-16">
-          <MapPin className="h-24 w-24 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            還沒有旅行計劃
-          </h3>
-          <p className="text-gray-600 mb-6">
-            開始創建您的第一個旅行計劃吧！
-          </p>
-          <Link to="/create" className="btn-primary">
-            創建旅行
-          </Link>
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {trips.map((trip) => (
-            <div key={trip._id} className="card hover:shadow-md transition-shadow duration-200">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-semibold text-gray-900">{trip.title}</h3>
-                <div className="flex space-x-2">
-                  <Link
-                    to={`/trips/${trip._id}`}
-                    className="text-gray-400 hover:text-blue-600 transition-colors"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Link>
-                  <button
-                    onClick={() => deleteTrip(trip._id)}
-                    className="text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center space-x-2 text-gray-600">
-                  <MapPin className="h-4 w-4" />
-                  <span>{trip.destination}</span>
-                </div>
-                <div className="flex items-center space-x-2 text-gray-600">
-                  <Calendar className="h-4 w-4" />
-                  <span>
-                    {formatDate(trip.startDate)} - {formatDate(trip.endDate)}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2 text-gray-600">
-                  <DollarSign className="h-4 w-4" />
-                  <span>
-                    {trip.budget.spent} / {trip.budget.total} {trip.budget.currency}
-                  </span>
-                </div>
-              </div>
-
-              {trip.description && (
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                  {trip.description}
-                </p>
-              )}
-
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">
-                  {calculateDuration(trip.startDate, trip.endDate)} 天
-                </span>
-                <Link
-                  to={`/trips/${trip._id}`}
-                  className="text-blue-600 hover:text-blue-700 font-medium text-sm"
-                >
-                  查看详情 →
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* AI旅遊顧問浮動按鈕 - 只在未最小化時顯示 */}
+      {!isMinimized && (
+        <button
+          onClick={openChat}
+          className="fixed bottom-6 right-6 z-50 w-16 h-16 bg-gradient-to-r from-[#c7a559] to-[#efc56a] hover:from-[#b8954f] hover:to-[#d4b05a] text-[#162022] rounded-full shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center group"
+          title="AI旅遊顧問"
+        >
+          <MessageCircle className="h-8 w-8 group-hover:scale-110 transition-transform duration-300" />
+        </button>
       )}
-
     </div>
   );
 };
