@@ -39,3 +39,31 @@
 .read-the-docs {
   color: #888;
 }
+
+/* 水平循環捲動動畫 */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  10% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 30s linear infinite;
+  animation-iteration-count: infinite;
+  animation-fill-mode: none;
+}
+
+.animate-scroll:hover {
+  animation-play-state: paused;
+}
+
+/* 隱藏滾動條 */
+.overflow-x-auto::-webkit-scrollbar {
+  display: none;
+}

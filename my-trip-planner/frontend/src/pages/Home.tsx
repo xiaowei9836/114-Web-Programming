@@ -19,6 +19,12 @@ const Home: React.FC = () => {
   const [isGalleryVisible, setIsGalleryVisible] = useState(false);
   const [isQuickStartVisible, setIsQuickStartVisible] = useState(false);
   
+  // 手動捲動相關狀態
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  
   // 直接使用霞鶩文楷字體
   const fontClass = 'font-["LXGW-WenKai"]';
   
@@ -46,42 +52,84 @@ const Home: React.FC = () => {
   
   const features = [
     {
-      icon: <Globe className="h-12 w-12 text-blue-600" />,
+      icon: <Globe className="h-12 w-12 text-blue-500" />,
       title: '地圖規劃',
       description: '規劃專屬旅行路線，探索目的景點和餐廳',
-      color: 'bg-[#E8F2FF]'
+      backgroundImage: '/images/card01.jpg'
     },
     {
-      icon: <Calendar className="h-12 w-12 text-green-600" />,
+      icon: <Calendar className="h-12 w-12 text-green-500" />,
       title: '行程安排',
       description: '建立詳細行程，包含活動、時間和住宿等',
-      color: 'bg-[#E8F8F0]'
+      backgroundImage: '/images/card02.jpg'
     },
     {
-      icon: <DollarSign className="h-12 w-12 text-yellow-600" />,
+      icon: <DollarSign className="h-12 w-12 text-yellow-500" />,
       title: '預算管理',
       description: '追蹤旅行支出，設定預算限制和管理財務',
-      color: 'bg-[#FFF8E8]'
+      backgroundImage: '/images/card03.jpg'
     },
     {
-      icon: <Bell className="h-12 w-12 text-purple-600" />,
+      icon: <Bell className="h-12 w-12 text-purple-500" />,
       title: '旅行提醒',
       description: '設置重要提醒，如航班時間、飯店入住等',
-      color: 'bg-[#F8E8FF]'
+      backgroundImage: '/images/card04.jpg'
     },
     {
-      icon: <BookOpen className="h-12 w-12 text-red-600" />,
+      icon: <BookOpen className="h-12 w-12 text-red-500" />,
       title: '旅行日記',
       description: '記錄旅行中的精彩時刻，分享照片與回憶',
-      color: 'bg-[#FFE8E8]'
+      backgroundImage: '/images/card05.jpg'
     },
     {
-      icon: <Bot className="h-12 w-12 text-indigo-600" />,
+      icon: <Bot className="h-12 w-12 text-indigo-500" />,
       title: 'AI 諮詢',
       description: '智能助理，提供旅遊行程、或預算等建議',
-      color: 'bg-[#E8F2FF]'
+      backgroundImage: '/images/card06.jpg'
     }
   ];
+
+  // 手動捲動事件處理
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    setStartX(e.pageX - (scrollContainerRef.current?.offsetLeft || 0));
+    setScrollLeft(scrollContainerRef.current?.scrollLeft || 0);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !scrollContainerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - (scrollContainerRef.current.offsetLeft || 0);
+    const walk = (x - startX) * 2;
+    scrollContainerRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  // 觸控事件處理
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setIsDragging(true);
+    setStartX(e.touches[0].pageX - (scrollContainerRef.current?.offsetLeft || 0));
+    setScrollLeft(scrollContainerRef.current?.scrollLeft || 0);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || !scrollContainerRef.current) return;
+    e.preventDefault();
+    const x = e.touches[0].pageX - (scrollContainerRef.current.offsetLeft || 0);
+    const walk = (x - startX) * 2;
+    scrollContainerRef.current.scrollLeft = scrollLeft - walk;
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+  };
 
   // 滚动动画效果
   useEffect(() => {
@@ -453,32 +501,97 @@ const Home: React.FC = () => {
             </p>
           </div>
           
-          <div className="grid grid-cols-3 gap-6">
-            {features.map((feature, index) => (
-              <div 
-                key={index}
-                className={`group ${feature.color} border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:-translate-y-2 transition-all duration-700 ${
-                  isFeaturesVisible 
-                    ? 'opacity-100 translate-y-0' 
-                    : 'opacity-0 translate-y-12'
-                }`}
-                style={{
-                  transitionDelay: `${(index + 1) * 100}ms`
-                }}
-              >
-                <div className="flex justify-center mb-4">
-                  <div className={`w-16 h-16 ${feature.color} rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                    {feature.icon}
+          <div 
+            className="overflow-x-auto overflow-y-visible cursor-grab active:cursor-grabbing pt-8"
+            ref={scrollContainerRef}
+            onMouseDown={handleMouseDown}
+            onMouseLeave={handleMouseLeave}
+            onMouseUp={handleMouseUp}
+            onMouseMove={handleMouseMove}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            <div 
+              className={`flex gap-3 ${!isDragging ? 'animate-scroll' : ''}`} 
+              style={{ width: 'calc(120% + 0.5rem)' }}
+            >
+              {/* 第一組卡片 */}
+              {features.map((feature, index) => (
+                <div 
+                  key={`first-${index}`}
+                  className={`group relative overflow-hidden rounded-2xl p-6 h-64 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 flex-shrink-0 ${
+                    isFeaturesVisible 
+                      ? 'opacity-100 translate-y-0' 
+                      : 'opacity-0 translate-y-12'
+                  }`}
+                  style={{
+                    transitionDelay: `${(index + 1) * 100}ms`,
+                    backgroundImage: `url(${feature.backgroundImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: '73% 35%',
+                    backgroundRepeat: 'no-repeat',
+                    width: 'calc(25% - 0.5rem)'
+                  }}
+                >
+                  {/* 背景遮罩層，確保文字可讀性 */}
+                  <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-30 transition-all duration-300 rounded-2xl"></div>
+                  
+                  {/* 內容區域 */}
+                  <div className="relative z-10 h-full flex flex-col items-center justify-center">
+                    <div className="flex justify-center mb-4">
+                      <div className="w-16 h-16 bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        {feature.icon}
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-3 text-center text-white group-hover:text-white transition-colors">
+                      {feature.title}
+                    </h3>
+                    <p className="text-white text-opacity-90 leading-relaxed text-center group-hover:text-white transition-colors">
+                      {feature.description}
+                    </p>
                   </div>
                 </div>
-                <h3 className="text-xl font-semibold mb-3 text-center text-gray-800 group-hover:text-gray-900 transition-colors">
-                  {feature.title}
-                </h3>
-                <p className="text-gray-600 leading-relaxed text-center group-hover:text-gray-700 transition-colors">
-                  {feature.description}
-                </p>
-              </div>
-            ))}
+              ))}
+              {/* 第二組卡片（重複，用於循環效果） */}
+              {features.map((feature, index) => (
+                <div 
+                  key={`second-${index}`}
+                  className={`group relative overflow-hidden rounded-2xl p-6 h-64 hover:shadow-lg hover:-translate-y-2 transition-all duration-300 flex-shrink-0 ${
+                    isFeaturesVisible 
+                      ? 'opacity-100 translate-y-0' 
+                      : 'opacity-0 translate-y-12'
+                  }`}
+                  style={{
+                    transitionDelay: `${(index + 1) * 100}ms`,
+                    backgroundImage: `url(${feature.backgroundImage})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: '73% 35%',
+                    backgroundRepeat: 'no-repeat',
+                    width: 'calc(25% - 0.5rem)'
+                  }}
+                >
+                  {/* 背景遮罩層，確保文字可讀性 */}
+                  <div className="absolute inset-0 bg-black bg-opacity-40 group-hover:bg-opacity-30 transition-all duration-300 rounded-2xl"></div>
+                  
+                  {/* 內容區域 */}
+                  <div className="relative z-10 h-full flex flex-col items-center justify-center">
+                    <div className="flex justify-center mb-4">
+                      <div className="w-16 h-16 bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        {feature.icon}
+                      </div>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-3 text-center text-white group-hover:text-white transition-colors">
+                      {feature.title}
+                    </h3>
+                    <p className="text-white text-opacity-90 leading-relaxed text-center group-hover:text-white transition-colors">
+                      {feature.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>

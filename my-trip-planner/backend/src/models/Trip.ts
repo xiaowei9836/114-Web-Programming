@@ -52,6 +52,7 @@ export interface ITrip extends Document {
       estimatedCost?: number;
       estimatedTime?: number;
       notes?: string;
+      currency?: string;
     }>;
   };
   createdAt: Date;
@@ -163,7 +164,8 @@ const TripSchema: Schema = new Schema({
       },
       estimatedCost: Number,
       estimatedTime: Number,
-      notes: String
+      notes: String,
+      currency: String
     }]
   }
 }, {

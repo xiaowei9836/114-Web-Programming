@@ -26,6 +26,7 @@ interface Trip {
       estimatedCost?: number;
       estimatedTime?: number;
       notes?: string;
+      currency?: string;
     }>;
   };
 }
@@ -167,6 +168,29 @@ const TripList: React.FC = () => {
     const diffTime = Math.abs(end.getTime() - start.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
+  };
+
+  // 計算地點預算總和（按貨幣分組）
+  const calculateTotalSpent = (trip: Trip) => {
+    if (!trip.mapTripData?.points) return [];
+    
+    const currencyTotals: { [key: string]: number } = {};
+    
+    trip.mapTripData.points.forEach(point => {
+      const cost = point.estimatedCost || 0;
+      const currency = (point as any).currency || trip.budget.currency;
+      
+      if (currencyTotals[currency]) {
+        currencyTotals[currency] += cost;
+      } else {
+        currencyTotals[currency] = cost;
+      }
+    });
+    
+    return Object.entries(currencyTotals)
+      .filter(([_, amount]) => amount > 0)
+      .map(([currency, amount]) => `${amount} ${currency}`)
+      .join(', ');
   };
 
   if (loading) {
@@ -362,7 +386,7 @@ const TripList: React.FC = () => {
                   <div className="flex items-center space-x-2 text-gray-800">
                     <DollarSign className="h-4 w-4 text-yellow-600 flex-shrink-0 min-w-[16px] min-h-[16px]" />
                     <span>
-                      {trip.budget.spent} / {trip.budget.total} {trip.budget.currency}
+                      {calculateTotalSpent(trip).length > 0 ? calculateTotalSpent(trip) : '0 ' + trip.budget.currency} / {trip.budget.total} {trip.budget.currency}
                     </span>
                   </div>
                 </div>
