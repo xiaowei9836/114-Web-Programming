@@ -205,8 +205,8 @@ const TripList: React.FC = () => {
     
     // 計算本地時間顯示值
     const utcDate = new Date(defaultReminderTime);
-    // 將 UTC 時間轉換為本地時間顯示
-    const localValue = new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    const taiwanDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
+    const localValue = taiwanDate.toISOString().slice(0, 16);
     
     setNotificationForm({
       email: trip.notificationSettings?.email || '',
@@ -250,14 +250,16 @@ const TripList: React.FC = () => {
         break;
     }
 
-    // 檢查提醒時間是否在過去
+    // 檢查提醒時間是否在過去（基於台灣時間）
     const reminderDateTime = new Date(reminderTime);
-    const timeDiff = reminderDateTime.getTime() - now.getTime();
+    const taiwanReminderTime = new Date(reminderDateTime.getTime() + 8 * 60 * 60 * 1000);
+    const taiwanNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    const timeDiff = taiwanReminderTime.getTime() - taiwanNow.getTime();
     const minutesDiff = Math.round(timeDiff / (1000 * 60));
     
     console.log('調試信息:');
-    console.log('當前時間:', now.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
-    console.log('提醒時間:', reminderDateTime.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
+    console.log('當前台灣時間:', taiwanNow.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
+    console.log('提醒台灣時間:', taiwanReminderTime.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }));
     console.log('時間差（分鐘）:', minutesDiff);
     
     // 如果時間在過去，不允許
@@ -311,7 +313,9 @@ const TripList: React.FC = () => {
           trip._id === selectedTrip._id ? updatedTrip : trip
         ));
         setShowNotificationModal(false);
-        alert(`通知設定已保存！將在台灣時間 ${new Date(reminderTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })} 發送提醒`);
+        // 直接顯示用戶輸入的台灣時間
+        const userInputTime = localDateTimeValue ? new Date(localDateTimeValue).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '未設定';
+        alert(`通知設定已保存！將在台灣時間 ${userInputTime} 發送提醒`);
       } else {
         const errorData = await response.json();
         console.error('API 錯誤響應:', errorData);
@@ -684,7 +688,8 @@ const TripList: React.FC = () => {
                       
                       // 計算新的本地時間顯示值
                       const utcDate = new Date(newReminderTime);
-                      newLocalValue = new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                      const taiwanDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
+                      newLocalValue = taiwanDate.toISOString().slice(0, 16);
                     }
                     
                     setNotificationForm({
@@ -723,10 +728,9 @@ const TripList: React.FC = () => {
                       }
                       
                       try {
-                        // datetime-local 輸入的是本地時間，需要轉換為 UTC 時間
-                        const localDateTime = new Date(newValue);
-                        // 將本地時間轉換為 UTC 時間（減去時區偏移）
-                        const utcDateTime = new Date(localDateTime.getTime() - localDateTime.getTimezoneOffset() * 60000);
+                        // datetime-local 輸入的是台灣時間，需要轉換為 UTC 存儲
+                        const taiwanDateTime = new Date(newValue);
+                        const utcDateTime = new Date(taiwanDateTime.getTime() - 8 * 60 * 60 * 1000);
                         setNotificationForm({
                           ...notificationForm,
                           reminderTime: utcDateTime.toISOString()
