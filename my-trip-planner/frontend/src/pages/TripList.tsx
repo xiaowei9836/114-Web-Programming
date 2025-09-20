@@ -275,6 +275,17 @@ const TripList: React.FC = () => {
     }
 
     try {
+      console.log('發送通知設定請求...');
+      console.log('API URL:', `${API_BASE_URL}/api/trips/${selectedTrip._id}/notification`);
+      console.log('請求數據:', {
+        notificationSettings: {
+          enabled: true,
+          email: notificationForm.email,
+          reminderTime: reminderTime,
+          reminderType: notificationForm.reminderType
+        }
+      });
+
       const response = await fetch(`${API_BASE_URL}/api/trips/${selectedTrip._id}/notification`, {
         method: 'PUT',
         headers: {
@@ -290,19 +301,25 @@ const TripList: React.FC = () => {
         }),
       });
 
+      console.log('響應狀態:', response.status);
+      console.log('響應狀態文本:', response.statusText);
+
       if (response.ok) {
         const updatedTrip = await response.json();
+        console.log('更新後的旅行數據:', updatedTrip);
         setTrips(trips.map(trip => 
           trip._id === selectedTrip._id ? updatedTrip : trip
         ));
         setShowNotificationModal(false);
         alert(`通知設定已保存！將在台灣時間 ${new Date(new Date(reminderTime).getTime() + 8 * 60 * 60 * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })} 發送提醒`);
       } else {
-        throw new Error('保存通知設定失敗');
+        const errorData = await response.json();
+        console.error('API 錯誤響應:', errorData);
+        throw new Error(`保存通知設定失敗: ${errorData.message || response.statusText}`);
       }
     } catch (error) {
       console.error('保存通知設定失敗:', error);
-      alert('保存失敗，請稍後再試');
+      alert(`保存失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
     }
   };
 
