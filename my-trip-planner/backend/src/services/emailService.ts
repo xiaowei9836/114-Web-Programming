@@ -5,7 +5,7 @@ dotenv.config();
 
 // 創建郵件傳輸器
 const createTransporter = () => {
-  return nodemailer.createTransporter({
+  return nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.GMAIL_USER,
