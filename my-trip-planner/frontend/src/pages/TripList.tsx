@@ -236,9 +236,8 @@ const TripList: React.FC = () => {
         break;
     }
 
-    // 檢查提醒時間是否合理
+    // 檢查提醒時間是否在過去（允許當天未來的時間）
     const reminderDateTime = new Date(reminderTime);
-    const now = new Date();
     const timeDiff = reminderDateTime.getTime() - now.getTime();
     const minutesDiff = Math.round(timeDiff / (1000 * 60));
     
