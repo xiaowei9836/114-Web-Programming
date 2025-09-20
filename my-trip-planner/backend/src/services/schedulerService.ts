@@ -7,29 +7,44 @@ const checkAndSendReminders = async () => {
   try {
     console.log('🔍 檢查旅行提醒...');
     
+    // 獲取台灣時間
     const now = new Date();
-    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000); // 5分鐘後
+    const taiwanNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    const fiveMinutesFromNow = new Date(taiwanNow.getTime() + 5 * 60 * 1000); // 台灣時間5分鐘後
     
-    // 查找需要發送提醒的旅行（在未來5分鐘內）
-    const tripsToRemind = await Trip.find({
-      'notificationSettings.enabled': true,
-      'notificationSettings.reminderTime': {
-        $gte: now.toISOString(),
-        $lte: fiveMinutesFromNow.toISOString()
-      }
+    console.log(`🕐 當前台灣時間: ${taiwanNow.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
+    
+    // 查找所有啟用通知的旅行
+    const allTrips = await Trip.find({
+      'notificationSettings.enabled': true
     });
+    
+    console.log(`📋 找到 ${allTrips.length} 個啟用通知的旅行`);
+    
+    const tripsToRemind = [];
+    
+    for (const trip of allTrips) {
+      const reminderTime = new Date(trip.notificationSettings?.reminderTime || '');
+      const taiwanReminderTime = new Date(reminderTime.getTime() + 8 * 60 * 60 * 1000);
+      
+      // 檢查是否在台灣時間的未來5分鐘內
+      const timeDiff = taiwanReminderTime.getTime() - taiwanNow.getTime();
+      const minutesDiff = Math.round(timeDiff / (1000 * 60));
+      
+      console.log(`⏰ 檢查提醒: ${trip.title}`);
+      console.log(`📅 提醒時間 (台灣): ${taiwanReminderTime.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
+      console.log(`⏱️ 時間差: ${minutesDiff} 分鐘`);
+      
+      if (minutesDiff >= 0 && minutesDiff <= 5) {
+        tripsToRemind.push(trip);
+      }
+    }
     
     console.log(`📧 找到 ${tripsToRemind.length} 個需要提醒的旅行`);
     
     for (const trip of tripsToRemind) {
       try {
         const reminderType = trip.notificationSettings?.reminderType || 'start';
-        const reminderTime = new Date(trip.notificationSettings?.reminderTime || '');
-        
-        console.log(`⏰ 檢查提醒: ${trip.title}`);
-        console.log(`📅 提醒時間 (台灣): ${new Date(reminderTime.getTime() + 8 * 60 * 60 * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
-        console.log(`🕐 當前時間 (台灣): ${new Date(now.getTime() + 8 * 60 * 60 * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
-        console.log(`⏱️ 時間差: ${Math.round((reminderTime.getTime() - now.getTime()) / 1000 / 60)} 分鐘`);
         
         const result = await sendTripReminder(trip, reminderType);
         

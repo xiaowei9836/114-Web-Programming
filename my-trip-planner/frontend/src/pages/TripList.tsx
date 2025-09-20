@@ -250,9 +250,11 @@ const TripList: React.FC = () => {
         break;
     }
 
-    // 檢查提醒時間是否在過去（允許當天未來的時間）
+    // 檢查提醒時間是否在過去（基於台灣時間）
     const reminderDateTime = new Date(reminderTime);
-    const timeDiff = reminderDateTime.getTime() - now.getTime();
+    const taiwanReminderTime = new Date(reminderDateTime.getTime() + 8 * 60 * 60 * 1000);
+    const taiwanNow = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+    const timeDiff = taiwanReminderTime.getTime() - taiwanNow.getTime();
     const minutesDiff = Math.round(timeDiff / (1000 * 60));
     
     // 如果時間在過去，不允許
@@ -291,7 +293,7 @@ const TripList: React.FC = () => {
           trip._id === selectedTrip._id ? updatedTrip : trip
         ));
         setShowNotificationModal(false);
-        alert(`通知設定已保存！將在 ${new Date(new Date(reminderTime).getTime() + 8 * 60 * 60 * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })} 發送提醒`);
+        alert(`通知設定已保存！將在台灣時間 ${new Date(new Date(reminderTime).getTime() + 8 * 60 * 60 * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })} 發送提醒`);
       } else {
         throw new Error('保存通知設定失敗');
       }
@@ -686,14 +688,6 @@ const TripList: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     提醒時間
                   </label>
-                  {/* 調試資訊 */}
-                  {process.env.NODE_ENV === 'development' && (
-                    <div className="text-xs text-gray-500 mb-2 p-2 bg-gray-100 rounded">
-                      <div>UTC 時間: {notificationForm.reminderTime}</div>
-                      <div>台灣時間: {notificationForm.reminderTime ? 
-                        new Date(new Date(notificationForm.reminderTime).getTime() + 8 * 60 * 60 * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : 'N/A'}</div>
-                    </div>
-                  )}
                   <input
                     type="datetime-local"
                     value={localDateTimeValue}
