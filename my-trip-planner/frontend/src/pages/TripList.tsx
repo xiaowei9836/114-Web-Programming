@@ -205,8 +205,8 @@ const TripList: React.FC = () => {
     
     // 計算本地時間顯示值
     const utcDate = new Date(defaultReminderTime);
-    const taiwanDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
-    const localValue = taiwanDate.toISOString().slice(0, 16);
+    // 將 UTC 時間轉換為本地時間顯示
+    const localValue = new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
     
     setNotificationForm({
       email: trip.notificationSettings?.email || '',
@@ -311,7 +311,7 @@ const TripList: React.FC = () => {
           trip._id === selectedTrip._id ? updatedTrip : trip
         ));
         setShowNotificationModal(false);
-        alert(`通知設定已保存！將在台灣時間 ${new Date(new Date(reminderTime).getTime() + 8 * 60 * 60 * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })} 發送提醒`);
+        alert(`通知設定已保存！將在台灣時間 ${new Date(reminderTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })} 發送提醒`);
       } else {
         const errorData = await response.json();
         console.error('API 錯誤響應:', errorData);
@@ -684,8 +684,7 @@ const TripList: React.FC = () => {
                       
                       // 計算新的本地時間顯示值
                       const utcDate = new Date(newReminderTime);
-                      const taiwanDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
-                      newLocalValue = taiwanDate.toISOString().slice(0, 16);
+                      newLocalValue = new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
                     }
                     
                     setNotificationForm({
@@ -724,11 +723,13 @@ const TripList: React.FC = () => {
                       }
                       
                       try {
-                        // datetime-local 輸入的是本地時間，直接轉換為 UTC
+                        // datetime-local 輸入的是本地時間，需要轉換為 UTC 時間
                         const localDateTime = new Date(newValue);
+                        // 將本地時間轉換為 UTC 時間（減去時區偏移）
+                        const utcDateTime = new Date(localDateTime.getTime() - localDateTime.getTimezoneOffset() * 60000);
                         setNotificationForm({
                           ...notificationForm,
-                          reminderTime: localDateTime.toISOString()
+                          reminderTime: utcDateTime.toISOString()
                         });
                       } catch (error) {
                         console.error('時間轉換錯誤:', error);
