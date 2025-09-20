@@ -224,10 +224,43 @@ export const updateNotificationSettings = async (req: Request, res: Response): P
     }
     
     console.log(`✅ 通知設定已更新: ${trip.title}`);
+    console.log(`⏰ 提醒時間: ${new Date(notificationSettings.reminderTime).toLocaleString('zh-TW')}`);
     res.status(200).json(trip);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '未知错误';
     console.error(`❌ 更新通知設定失敗，ID: ${req.params.id}`, error);
     res.status(400).json({ message: '更新通知設定失败', error: errorMessage });
+  }
+};
+
+// 測試提醒功能
+export const testNotification = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    
+    const trip = await Trip.findById(id);
+    if (!trip) {
+      res.status(404).json({ message: '旅行不存在' });
+      return;
+    }
+    
+    if (!trip.notificationSettings?.enabled) {
+      res.status(400).json({ message: '此旅行未啟用通知' });
+      return;
+    }
+    
+    // 手動觸發提醒
+    const { sendTripReminder } = await import('../services/emailService');
+    const result = await sendTripReminder(trip, trip.notificationSettings.reminderType);
+    
+    if (result.success) {
+      res.status(200).json({ message: '測試提醒發送成功', messageId: result.messageId });
+    } else {
+      res.status(500).json({ message: '測試提醒發送失敗', error: result.error });
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    console.error(`❌ 測試提醒失敗，ID: ${req.params.id}`, error);
+    res.status(500).json({ message: '測試提醒失败', error: errorMessage });
   }
 };

@@ -8,14 +8,14 @@ const checkAndSendReminders = async () => {
     console.log('🔍 檢查旅行提醒...');
     
     const now = new Date();
-    const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000); // 1小時後
+    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000); // 5分鐘後
     
-    // 查找需要發送提醒的旅行
+    // 查找需要發送提醒的旅行（在未來5分鐘內）
     const tripsToRemind = await Trip.find({
       'notificationSettings.enabled': true,
       'notificationSettings.reminderTime': {
         $gte: now.toISOString(),
-        $lte: oneHourFromNow.toISOString()
+        $lte: fiveMinutesFromNow.toISOString()
       }
     });
     
@@ -24,6 +24,13 @@ const checkAndSendReminders = async () => {
     for (const trip of tripsToRemind) {
       try {
         const reminderType = trip.notificationSettings?.reminderType || 'start';
+        const reminderTime = new Date(trip.notificationSettings?.reminderTime || '');
+        
+        console.log(`⏰ 檢查提醒: ${trip.title}`);
+        console.log(`📅 提醒時間: ${reminderTime.toLocaleString('zh-TW')}`);
+        console.log(`🕐 當前時間: ${now.toLocaleString('zh-TW')}`);
+        console.log(`⏱️ 時間差: ${Math.round((reminderTime.getTime() - now.getTime()) / 1000 / 60)} 分鐘`);
+        
         const result = await sendTripReminder(trip, reminderType);
         
         if (result.success) {
