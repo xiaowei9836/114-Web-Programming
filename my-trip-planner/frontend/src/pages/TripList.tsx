@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, MapPin, Calendar, DollarSign, Edit, Trash2, MessageCircle } from 'lucide-react';
+import { Plus, MapPin, Calendar, DollarSign, Edit, Trash2, MessageCircle, Bell, BellOff } from 'lucide-react';
 import { useAIChat } from '../contexts/AIChatContext';
 
 interface Trip {
@@ -29,6 +29,12 @@ interface Trip {
       currency?: string;
     }>;
   };
+  notificationSettings?: {
+    enabled: boolean;
+    email: string;
+    reminderTime: string; // 提醒時間，例如 "2025-09-20T10:00:00.000Z"
+    reminderType: 'start' | 'end' | 'custom'; // 提醒類型
+  };
 }
 
 const TripList: React.FC = () => {
@@ -36,6 +42,15 @@ const TripList: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { openChat, isMinimized } = useAIChat();
+  
+  // 通知相關狀態
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  const [notificationForm, setNotificationForm] = useState({
+    email: '',
+    reminderTime: '',
+    reminderType: 'start' as 'start' | 'end' | 'custom'
+  });
 
   // 後端 API 端點配置
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
@@ -155,6 +170,132 @@ const TripList: React.FC = () => {
         console.error('刪除旅行失敗:', error);
         alert('刪除失敗，請稍後再試');
       }
+    }
+  };
+
+  // 通知相關函數
+  const handleNotificationToggle = (trip: Trip) => {
+    setSelectedTrip(trip);
+    
+    // 計算預設提醒時間
+    let defaultReminderTime = trip.startDate;
+    if (trip.notificationSettings?.reminderTime) {
+      defaultReminderTime = trip.notificationSettings.reminderTime;
+    } else {
+      // 根據提醒類型計算預設時間
+      const startDate = new Date(trip.startDate);
+      const endDate = new Date(trip.endDate);
+      const reminderType = trip.notificationSettings?.reminderType || 'start';
+      
+      if (reminderType === 'start') {
+        defaultReminderTime = new Date(startDate.getTime() - 60 * 60 * 1000).toISOString();
+      } else if (reminderType === 'end') {
+        defaultReminderTime = new Date(endDate.getTime() - 60 * 60 * 1000).toISOString();
+      }
+    }
+    
+    setNotificationForm({
+      email: trip.notificationSettings?.email || '',
+      reminderTime: defaultReminderTime,
+      reminderType: trip.notificationSettings?.reminderType || 'start'
+    });
+    setShowNotificationModal(true);
+  };
+
+  const handleNotificationSave = async () => {
+    if (!selectedTrip || !notificationForm.email) {
+      alert('請輸入有效的 Gmail 信箱');
+      return;
+    }
+
+    // 根據提醒類型計算提醒時間
+    let reminderTime = '';
+    const now = new Date();
+    
+    switch (notificationForm.reminderType) {
+      case 'start':
+        // 旅行開始前 1 小時提醒
+        const startDate = new Date(selectedTrip.startDate);
+        reminderTime = new Date(startDate.getTime() - 60 * 60 * 1000).toISOString();
+        break;
+      case 'end':
+        // 旅行結束前 1 小時提醒
+        const endDate = new Date(selectedTrip.endDate);
+        reminderTime = new Date(endDate.getTime() - 60 * 60 * 1000).toISOString();
+        break;
+      case 'custom':
+        // 使用使用者自訂的時間
+        reminderTime = notificationForm.reminderTime;
+        break;
+    }
+
+    // 檢查提醒時間是否在未來
+    if (new Date(reminderTime) <= now) {
+      alert('提醒時間必須設定在未來！');
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/trips/${selectedTrip._id}/notification`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notificationSettings: {
+            enabled: true,
+            email: notificationForm.email,
+            reminderTime: reminderTime,
+            reminderType: notificationForm.reminderType
+          }
+        }),
+      });
+
+      if (response.ok) {
+        const updatedTrip = await response.json();
+        setTrips(trips.map(trip => 
+          trip._id === selectedTrip._id ? updatedTrip : trip
+        ));
+        setShowNotificationModal(false);
+        alert(`通知設定已保存！將在 ${new Date(reminderTime).toLocaleString('zh-TW')} 發送提醒`);
+      } else {
+        throw new Error('保存通知設定失敗');
+      }
+    } catch (error) {
+      console.error('保存通知設定失敗:', error);
+      alert('保存失敗，請稍後再試');
+    }
+  };
+
+  const handleNotificationDisable = async (tripId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/trips/${tripId}/notification`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notificationSettings: {
+            enabled: false,
+            email: '',
+            reminderTime: '',
+            reminderType: 'start'
+          }
+        }),
+      });
+
+      if (response.ok) {
+        const updatedTrip = await response.json();
+        setTrips(trips.map(trip => 
+          trip._id === tripId ? updatedTrip : trip
+        ));
+        alert('通知已關閉');
+      } else {
+        throw new Error('關閉通知失敗');
+      }
+    } catch (error) {
+      console.error('關閉通知失敗:', error);
+      alert('關閉失敗，請稍後再試');
     }
   };
 
@@ -342,6 +483,22 @@ const TripList: React.FC = () => {
                     <h3 className="text-xl font-semibold text-gray-900">{trip.title}</h3>
                   </div>
                   <div className="flex space-x-2">
+                    {/* 通知按鈕 */}
+                    <button
+                      onClick={() => handleNotificationToggle(trip)}
+                      className={`transition-colors ${
+                        trip.notificationSettings?.enabled 
+                          ? 'text-yellow-600 hover:text-yellow-700' 
+                          : 'text-gray-700 hover:text-yellow-600'
+                      }`}
+                      title={trip.notificationSettings?.enabled ? '關閉通知' : '開啟通知'}
+                    >
+                      {trip.notificationSettings?.enabled ? (
+                        <Bell className="h-4 w-4" />
+                      ) : (
+                        <BellOff className="h-4 w-4" />
+                      )}
+                    </button>
                     <Link
                       to={`/trips/${trip._id}`}
                       className="text-gray-700 hover:text-[#3fb6b2] transition-colors"
@@ -415,6 +572,147 @@ const TripList: React.FC = () => {
       )}
         </div>
       </div>
+
+      {/* 通知設定彈窗 */}
+      {showNotificationModal && selectedTrip && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              設定旅行通知
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Gmail 信箱
+                </label>
+                <input
+                  type="email"
+                  value={notificationForm.email}
+                  onChange={(e) => setNotificationForm({
+                    ...notificationForm,
+                    email: e.target.value
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  placeholder="your-email@gmail.com"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  提醒類型
+                </label>
+                <select
+                  value={notificationForm.reminderType}
+                  onChange={(e) => {
+                    const newReminderType = e.target.value as 'start' | 'end' | 'custom';
+                    let newReminderTime = notificationForm.reminderTime;
+                    
+                    // 根據提醒類型自動計算時間
+                    if (selectedTrip && newReminderType !== 'custom') {
+                      if (newReminderType === 'start') {
+                        const startDate = new Date(selectedTrip.startDate);
+                        newReminderTime = new Date(startDate.getTime() - 60 * 60 * 1000).toISOString();
+                      } else if (newReminderType === 'end') {
+                        const endDate = new Date(selectedTrip.endDate);
+                        newReminderTime = new Date(endDate.getTime() - 60 * 60 * 1000).toISOString();
+                      }
+                    }
+                    
+                    setNotificationForm({
+                      ...notificationForm,
+                      reminderType: newReminderType,
+                      reminderTime: newReminderTime
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                >
+                  <option value="start">旅行開始前</option>
+                  <option value="end">旅行結束前</option>
+                  <option value="custom">自訂時間</option>
+                </select>
+              </div>
+
+              {notificationForm.reminderType === 'custom' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    提醒時間
+                  </label>
+                  {/* 調試資訊 */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="text-xs text-gray-500 mb-2 p-2 bg-gray-100 rounded">
+                      <div>UTC 時間: {notificationForm.reminderTime}</div>
+                      <div>本地時間: {notificationForm.reminderTime ? new Date(notificationForm.reminderTime).toLocaleString('zh-TW') : 'N/A'}</div>
+                    </div>
+                  )}
+                  <input
+                    type="datetime-local"
+                    value={(() => {
+                      if (!notificationForm.reminderTime) return '';
+                      try {
+                        // 將 UTC 時間轉換為本地時間顯示
+                        const utcDate = new Date(notificationForm.reminderTime);
+                        const localDate = new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000);
+                        return localDate.toISOString().slice(0, 16);
+                      } catch (error) {
+                        console.error('時間轉換錯誤:', error);
+                        return '';
+                      }
+                    })()}
+                    onChange={(e) => {
+                      if (!e.target.value) {
+                        setNotificationForm({
+                          ...notificationForm,
+                          reminderTime: ''
+                        });
+                        return;
+                      }
+                      
+                      try {
+                        // 將本地時間轉換為 UTC 時間
+                        const localDateTime = new Date(e.target.value);
+                        const utcDateTime = new Date(localDateTime.getTime() - localDateTime.getTimezoneOffset() * 60000);
+                        setNotificationForm({
+                          ...notificationForm,
+                          reminderTime: utcDateTime.toISOString()
+                        });
+                      } catch (error) {
+                        console.error('時間轉換錯誤:', error);
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+                  />
+                </div>
+              )}
+
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={handleNotificationSave}
+                  className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  保存設定
+                </button>
+                <button
+                  onClick={() => setShowNotificationModal(false)}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
+                >
+                  取消
+                </button>
+                {selectedTrip.notificationSettings?.enabled && (
+                  <button
+                    onClick={() => {
+                      handleNotificationDisable(selectedTrip._id);
+                      setShowNotificationModal(false);
+                    }}
+                    className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors"
+                  >
+                    關閉通知
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AI旅遊顧問浮動按鈕 - 只在未最小化時顯示 */}
       {!isMinimized && (
