@@ -27,8 +27,8 @@ const checkAndSendReminders = async () => {
         const reminderTime = new Date(trip.notificationSettings?.reminderTime || '');
         
         console.log(`⏰ 檢查提醒: ${trip.title}`);
-        console.log(`📅 提醒時間: ${reminderTime.toLocaleString('zh-TW')}`);
-        console.log(`🕐 當前時間: ${now.toLocaleString('zh-TW')}`);
+        console.log(`📅 提醒時間 (台灣): ${new Date(reminderTime.getTime() + 8 * 60 * 60 * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
+        console.log(`🕐 當前時間 (台灣): ${new Date(now.getTime() + 8 * 60 * 60 * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
         console.log(`⏱️ 時間差: ${Math.round((reminderTime.getTime() - now.getTime()) / 1000 / 60)} 分鐘`);
         
         const result = await sendTripReminder(trip, reminderType);

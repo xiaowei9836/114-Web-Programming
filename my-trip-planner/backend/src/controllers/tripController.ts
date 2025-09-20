@@ -224,7 +224,7 @@ export const updateNotificationSettings = async (req: Request, res: Response): P
     }
     
     console.log(`✅ 通知設定已更新: ${trip.title}`);
-    console.log(`⏰ 提醒時間: ${new Date(notificationSettings.reminderTime).toLocaleString('zh-TW')}`);
+    console.log(`⏰ 提醒時間 (台灣): ${new Date(new Date(notificationSettings.reminderTime).getTime() + 8 * 60 * 60 * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })}`);
     res.status(200).json(trip);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '未知错误';
