@@ -5,11 +5,28 @@ dotenv.config();
 
 // 創建郵件傳輸器
 const createTransporter = () => {
+  // 如果沒有設定應用程式密碼，使用替代方案
+  if (!process.env.GMAIL_APP_PASSWORD || process.env.GMAIL_APP_PASSWORD === 'your_app_password_here') {
+    console.log('⚠️ 未設定 Gmail 應用程式密碼，使用替代 SMTP 設定');
+    return nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD || 'your_app_password_here'
+      },
+      tls: {
+        rejectUnauthorized: false
+      }
+    });
+  }
+  
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD // 使用應用程式密碼
+      pass: process.env.GMAIL_APP_PASSWORD
     }
   });
 };
