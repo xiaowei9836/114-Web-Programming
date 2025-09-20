@@ -51,6 +51,7 @@ const TripList: React.FC = () => {
     reminderTime: '',
     reminderType: 'start' as 'start' | 'end' | 'custom'
   });
+  const [localDateTimeValue, setLocalDateTimeValue] = useState('');
 
   // 後端 API 端點配置
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
@@ -194,11 +195,17 @@ const TripList: React.FC = () => {
       }
     }
     
+    // 計算本地時間顯示值
+    const utcDate = new Date(defaultReminderTime);
+    const taiwanDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
+    const localValue = taiwanDate.toISOString().slice(0, 16);
+    
     setNotificationForm({
       email: trip.notificationSettings?.email || '',
       reminderTime: defaultReminderTime,
       reminderType: trip.notificationSettings?.reminderType || 'start'
     });
+    setLocalDateTimeValue(localValue);
     setShowNotificationModal(true);
   };
 
@@ -257,7 +264,7 @@ const TripList: React.FC = () => {
           trip._id === selectedTrip._id ? updatedTrip : trip
         ));
         setShowNotificationModal(false);
-        alert(`通知設定已保存！將在 ${new Date(reminderTime).toLocaleString('zh-TW')} 發送提醒`);
+        alert(`通知設定已保存！將在 ${new Date(new Date(reminderTime).getTime() + 8 * 60 * 60 * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })} 發送提醒`);
       } else {
         throw new Error('保存通知設定失敗');
       }
@@ -606,6 +613,7 @@ const TripList: React.FC = () => {
                   onChange={(e) => {
                     const newReminderType = e.target.value as 'start' | 'end' | 'custom';
                     let newReminderTime = notificationForm.reminderTime;
+                    let newLocalValue = localDateTimeValue;
                     
                     // 根據提醒類型自動計算時間
                     if (selectedTrip && newReminderType !== 'custom') {
@@ -616,6 +624,11 @@ const TripList: React.FC = () => {
                         const endDate = new Date(selectedTrip.endDate);
                         newReminderTime = new Date(endDate.getTime() - 60 * 60 * 1000).toISOString();
                       }
+                      
+                      // 計算新的本地時間顯示值
+                      const utcDate = new Date(newReminderTime);
+                      const taiwanDate = new Date(utcDate.getTime() + 8 * 60 * 60 * 1000);
+                      newLocalValue = taiwanDate.toISOString().slice(0, 16);
                     }
                     
                     setNotificationForm({
@@ -623,6 +636,7 @@ const TripList: React.FC = () => {
                       reminderType: newReminderType,
                       reminderTime: newReminderTime
                     });
+                    setLocalDateTimeValue(newLocalValue);
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                 >
@@ -641,25 +655,18 @@ const TripList: React.FC = () => {
                   {process.env.NODE_ENV === 'development' && (
                     <div className="text-xs text-gray-500 mb-2 p-2 bg-gray-100 rounded">
                       <div>UTC 時間: {notificationForm.reminderTime}</div>
-                      <div>本地時間: {notificationForm.reminderTime ? new Date(notificationForm.reminderTime).toLocaleString('zh-TW') : 'N/A'}</div>
+                      <div>台灣時間: {notificationForm.reminderTime ? 
+                        new Date(new Date(notificationForm.reminderTime).getTime() + 8 * 60 * 60 * 1000).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : 'N/A'}</div>
                     </div>
                   )}
                   <input
                     type="datetime-local"
-                    value={(() => {
-                      if (!notificationForm.reminderTime) return '';
-                      try {
-                        // 將 UTC 時間轉換為本地時間顯示
-                        const utcDate = new Date(notificationForm.reminderTime);
-                        const localDate = new Date(utcDate.getTime() + utcDate.getTimezoneOffset() * 60000);
-                        return localDate.toISOString().slice(0, 16);
-                      } catch (error) {
-                        console.error('時間轉換錯誤:', error);
-                        return '';
-                      }
-                    })()}
+                    value={localDateTimeValue}
                     onChange={(e) => {
-                      if (!e.target.value) {
+                      const newValue = e.target.value;
+                      setLocalDateTimeValue(newValue);
+                      
+                      if (!newValue) {
                         setNotificationForm({
                           ...notificationForm,
                           reminderTime: ''
@@ -668,9 +675,9 @@ const TripList: React.FC = () => {
                       }
                       
                       try {
-                        // 將本地時間轉換為 UTC 時間
-                        const localDateTime = new Date(e.target.value);
-                        const utcDateTime = new Date(localDateTime.getTime() - localDateTime.getTimezoneOffset() * 60000);
+                        // 將台灣時間轉換為 UTC 時間 (台灣時間 - 8小時 = UTC)
+                        const taiwanDateTime = new Date(newValue);
+                        const utcDateTime = new Date(taiwanDateTime.getTime() - 8 * 60 * 60 * 1000);
                         setNotificationForm({
                           ...notificationForm,
                           reminderTime: utcDateTime.toISOString()
@@ -692,7 +699,10 @@ const TripList: React.FC = () => {
                   保存設定
                 </button>
                 <button
-                  onClick={() => setShowNotificationModal(false)}
+                  onClick={() => {
+                    setShowNotificationModal(false);
+                    setLocalDateTimeValue('');
+                  }}
                   className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors"
                 >
                   取消
@@ -702,6 +712,7 @@ const TripList: React.FC = () => {
                     onClick={() => {
                       handleNotificationDisable(selectedTrip._id);
                       setShowNotificationModal(false);
+                      setLocalDateTimeValue('');
                     }}
                     className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors"
                   >
