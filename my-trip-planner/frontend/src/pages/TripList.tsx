@@ -236,10 +236,24 @@ const TripList: React.FC = () => {
         break;
     }
 
-    // 檢查提醒時間是否在未來
-    if (new Date(reminderTime) <= now) {
-      alert('提醒時間必須設定在未來！');
+    // 檢查提醒時間是否合理
+    const reminderDateTime = new Date(reminderTime);
+    const now = new Date();
+    const timeDiff = reminderDateTime.getTime() - now.getTime();
+    const minutesDiff = Math.round(timeDiff / (1000 * 60));
+    
+    // 如果時間在過去，不允許
+    if (minutesDiff <= 0) {
+      alert('提醒時間不能設定在過去！請設定未來的時間。');
       return;
+    }
+    
+    // 如果時間在未來5分鐘內，給出提醒
+    if (minutesDiff < 5) {
+      const confirmed = window.confirm(`提醒時間設定在 ${minutesDiff} 分鐘後，確定要設定嗎？`);
+      if (!confirmed) {
+        return;
+      }
     }
 
     try {
