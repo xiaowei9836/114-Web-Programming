@@ -309,13 +309,19 @@ const TripList: React.FC = () => {
       if (response.ok) {
         const updatedTrip = await response.json();
         console.log('更新後的旅行數據:', updatedTrip);
-        setTrips(trips.map(trip => 
+        console.log('選中的旅行 ID:', selectedTrip._id);
+        console.log('更新前的 trips 狀態:', trips.map(t => ({ id: t._id, notificationEnabled: t.notificationSettings?.enabled })));
+        
+        const newTrips = trips.map(trip => 
           trip._id === selectedTrip._id ? updatedTrip : trip
-        ));
+        );
+        
+        console.log('更新後的 trips 狀態:', newTrips.map(t => ({ id: t._id, notificationEnabled: t.notificationSettings?.enabled })));
+        
+        setTrips(newTrips);
         setShowNotificationModal(false);
-        // 直接顯示用戶輸入的台灣時間
-        const userInputTime = localDateTimeValue ? new Date(localDateTimeValue).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }) : '未設定';
-        alert(`通知設定已保存！將在台灣時間 ${userInputTime} 發送提醒`);
+        const taiwanReminderTime = new Date(reminderTime).getTime() + 8 * 60 * 60 * 1000;
+        alert(`通知設定已保存！將在台灣時間 ${new Date(taiwanReminderTime).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' })} 發送提醒`);
       } else {
         const errorData = await response.json();
         console.error('API 錯誤響應:', errorData);
