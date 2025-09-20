@@ -4,10 +4,13 @@ import Trip, { ITrip } from '../models/Trip';
 // 获取所有旅行
 export const getAllTrips = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log('🔍 查詢所有旅行...');
     const trips = await Trip.find().sort({ createdAt: -1 });
+    console.log(`✅ 找到 ${trips.length} 個旅行`);
     res.status(200).json(trips);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '未知错误';
+    console.error('❌ 查詢旅行列表失敗:', error);
     res.status(500).json({ message: '获取旅行列表失败', error: errorMessage });
   }
 };
@@ -15,14 +18,21 @@ export const getAllTrips = async (req: Request, res: Response): Promise<void> =>
 // 获取单个旅行
 export const getTripById = async (req: Request, res: Response): Promise<void> => {
   try {
-    const trip = await Trip.findById(req.params.id);
+    const tripId = req.params.id;
+    console.log(`🔍 查詢旅行 ID: ${tripId}`);
+    
+    const trip = await Trip.findById(tripId);
     if (!trip) {
+      console.log(`❌ 旅行不存在，ID: ${tripId}`);
       res.status(404).json({ message: '旅行不存在' });
       return;
     }
+    
+    console.log(`✅ 找到旅行: ${trip.title} (${tripId})`);
     res.status(200).json(trip);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '未知错误';
+    console.error(`❌ 查詢旅行失敗，ID: ${req.params.id}`, error);
     res.status(500).json({ message: '获取旅行详情失败', error: errorMessage });
   }
 };

@@ -95,9 +95,20 @@ const TripDetail: React.FC = () => {
       if (response.ok) {
         const data = await response.json();
         setTrip(data);
+      } else {
+        // 處理 API 錯誤回應
+        if (response.status === 404) {
+          console.log('旅行不存在，ID:', id);
+          setTrip(null);
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('獲取旅行詳情失敗:', response.status, errorData);
+          setTrip(null);
+        }
       }
     } catch (error) {
-              console.error('獲取旅行詳情失敗:', error);
+      console.error('獲取旅行詳情失敗:', error);
+      setTrip(null);
     } finally {
       setLoading(false);
     }
