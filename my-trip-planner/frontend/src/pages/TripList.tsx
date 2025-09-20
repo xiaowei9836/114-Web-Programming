@@ -189,9 +189,17 @@ const TripList: React.FC = () => {
       const reminderType = trip.notificationSettings?.reminderType || 'start';
       
       if (reminderType === 'start') {
-        defaultReminderTime = new Date(startDate.getTime() - 60 * 60 * 1000).toISOString();
+        // 旅行開始前一天凌晨12點提醒
+        const dayBeforeStart = new Date(startDate);
+        dayBeforeStart.setDate(startDate.getDate() - 1);
+        dayBeforeStart.setHours(0, 0, 0, 0); // 設定為凌晨12點
+        defaultReminderTime = dayBeforeStart.toISOString();
       } else if (reminderType === 'end') {
-        defaultReminderTime = new Date(endDate.getTime() - 60 * 60 * 1000).toISOString();
+        // 旅行結束前一天凌晨12點提醒
+        const dayBeforeEnd = new Date(endDate);
+        dayBeforeEnd.setDate(endDate.getDate() - 1);
+        dayBeforeEnd.setHours(0, 0, 0, 0); // 設定為凌晨12點
+        defaultReminderTime = dayBeforeEnd.toISOString();
       }
     }
     
@@ -221,14 +229,20 @@ const TripList: React.FC = () => {
     
     switch (notificationForm.reminderType) {
       case 'start':
-        // 旅行開始前 1 小時提醒
+        // 旅行開始前一天凌晨12點提醒
         const startDate = new Date(selectedTrip.startDate);
-        reminderTime = new Date(startDate.getTime() - 60 * 60 * 1000).toISOString();
+        const dayBeforeStart = new Date(startDate);
+        dayBeforeStart.setDate(startDate.getDate() - 1);
+        dayBeforeStart.setHours(0, 0, 0, 0); // 設定為凌晨12點
+        reminderTime = dayBeforeStart.toISOString();
         break;
       case 'end':
-        // 旅行結束前 1 小時提醒
+        // 旅行結束前一天凌晨12點提醒
         const endDate = new Date(selectedTrip.endDate);
-        reminderTime = new Date(endDate.getTime() - 60 * 60 * 1000).toISOString();
+        const dayBeforeEnd = new Date(endDate);
+        dayBeforeEnd.setDate(endDate.getDate() - 1);
+        dayBeforeEnd.setHours(0, 0, 0, 0); // 設定為凌晨12點
+        reminderTime = dayBeforeEnd.toISOString();
         break;
       case 'custom':
         // 使用使用者自訂的時間
@@ -631,11 +645,19 @@ const TripList: React.FC = () => {
                     // 根據提醒類型自動計算時間
                     if (selectedTrip && newReminderType !== 'custom') {
                       if (newReminderType === 'start') {
+                        // 旅行開始前一天凌晨12點提醒
                         const startDate = new Date(selectedTrip.startDate);
-                        newReminderTime = new Date(startDate.getTime() - 60 * 60 * 1000).toISOString();
+                        const dayBeforeStart = new Date(startDate);
+                        dayBeforeStart.setDate(startDate.getDate() - 1);
+                        dayBeforeStart.setHours(0, 0, 0, 0); // 設定為凌晨12點
+                        newReminderTime = dayBeforeStart.toISOString();
                       } else if (newReminderType === 'end') {
+                        // 旅行結束前一天凌晨12點提醒
                         const endDate = new Date(selectedTrip.endDate);
-                        newReminderTime = new Date(endDate.getTime() - 60 * 60 * 1000).toISOString();
+                        const dayBeforeEnd = new Date(endDate);
+                        dayBeforeEnd.setDate(endDate.getDate() - 1);
+                        dayBeforeEnd.setHours(0, 0, 0, 0); // 設定為凌晨12點
+                        newReminderTime = dayBeforeEnd.toISOString();
                       }
                       
                       // 計算新的本地時間顯示值
@@ -653,8 +675,8 @@ const TripList: React.FC = () => {
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
                 >
-                  <option value="start">旅行開始前</option>
-                  <option value="end">旅行結束前</option>
+                  <option value="start">旅行開始前一天凌晨12點</option>
+                  <option value="end">旅行結束前一天凌晨12點</option>
                   <option value="custom">自訂時間</option>
                 </select>
               </div>
