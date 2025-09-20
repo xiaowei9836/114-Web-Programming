@@ -55,6 +55,13 @@ export interface ITrip extends Document {
       currency?: string;
     }>;
   };
+  // 通知設定
+  notificationSettings?: {
+    enabled: boolean;
+    email: string;
+    reminderTime: string;
+    reminderType: 'start' | 'end' | 'custom';
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -167,6 +174,20 @@ const TripSchema: Schema = new Schema({
       notes: String,
       currency: String
     }]
+  },
+  // 通知設定
+  notificationSettings: {
+    enabled: {
+      type: Boolean,
+      default: false
+    },
+    email: String,
+    reminderTime: String,
+    reminderType: {
+      type: String,
+      enum: ['start', 'end', 'custom'],
+      default: 'start'
+    }
   }
 }, {
   timestamps: true

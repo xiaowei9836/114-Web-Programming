@@ -201,3 +201,33 @@ export const deleteJournalEntry = async (req: Request, res: Response): Promise<v
     res.status(400).json({ message: '删除日记条目失败', error: errorMessage });
   }
 };
+
+// 更新通知設定
+export const updateNotificationSettings = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { notificationSettings } = req.body;
+    
+    console.log(`🔔 更新旅行通知設定，ID: ${id}`);
+    console.log(`📧 通知設定:`, notificationSettings);
+    
+    const trip = await Trip.findByIdAndUpdate(
+      id,
+      { notificationSettings },
+      { new: true, runValidators: true }
+    );
+    
+    if (!trip) {
+      console.log(`❌ 旅行不存在，ID: ${id}`);
+      res.status(404).json({ message: '旅行不存在' });
+      return;
+    }
+    
+    console.log(`✅ 通知設定已更新: ${trip.title}`);
+    res.status(200).json(trip);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '未知错误';
+    console.error(`❌ 更新通知設定失敗，ID: ${req.params.id}`, error);
+    res.status(400).json({ message: '更新通知設定失败', error: errorMessage });
+  }
+};

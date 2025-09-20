@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import connectDB from './config/database';
 import tripRoutes from './routes/tripRoutes';
+import { startScheduler } from './services/schedulerService';
 
 dotenv.config();
 
@@ -35,4 +36,7 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 app.listen(PORT, () => {
   console.log(`服務器運行在端口 ${PORT}`);
   console.log(`環境: ${process.env.NODE_ENV || 'development'}`);
+  
+  // 啟動定時任務
+  startScheduler();
 });

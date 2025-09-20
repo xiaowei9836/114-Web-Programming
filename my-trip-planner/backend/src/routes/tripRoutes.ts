@@ -9,7 +9,8 @@ import {
   addItineraryActivity,
   addReminder,
   addJournalEntry,
-  deleteJournalEntry
+  deleteJournalEntry,
+  updateNotificationSettings
 } from '../controllers/tripController';
 
 const router = express.Router();
@@ -40,5 +41,8 @@ router.post('/reminders', addReminder);
 router.post('/journal', addJournalEntry);
 router.post('/:id/journal', addJournalEntry);
 router.delete('/:id/journal/:journalId', deleteJournalEntry);
+
+// 通知管理
+router.put('/:id/notification', updateNotificationSettings);
 
 export default router;
